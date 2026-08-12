@@ -1,6 +1,6 @@
 import { LOGO } from "./logo";
 import WalletMenu from "./WalletMenu";
-export default function Topnav() {
+export default function Topnav({ onConnectClick }: { onConnectClick: () => void }) {
   return (
     <>
     <a className="m-brand" href="#" aria-label="Balcore home"><img src={LOGO} width="24" height="24" alt="" /> Balcore</a>
