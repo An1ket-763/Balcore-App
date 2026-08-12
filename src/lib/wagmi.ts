@@ -5,7 +5,7 @@ import { avalancheFuji, mainnet, base, arbitrum, polygon } from "wagmi/chains";
  * WalletConnect project id — set VITE_WALLETCONNECT_PROJECT_ID in your env.
  * See .env.example. Never hardcode the real id here.
  */
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ?? "";
+const projectId = import.meta.env['VITE_WALLETCONNECT_PROJECT_ID'] ?? "";
 
 export const wagmiConfig = getDefaultConfig({
   appName: "Balcore",

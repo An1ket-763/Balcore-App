@@ -1,3 +1,4 @@
+import { LOGO } from "../logo";
 export default function Overlays() {
   return (
     <>
@@ -268,7 +269,7 @@ export default function Overlays() {
       </div>
       <div className="swap-field-row">
         <input id="brAmt" inputMode="decimal" placeholder="0.00" aria-label="Amount of USDC to bridge" />
-        <button className="token-pick" style={{cursor: "default"}} tabIndex="-1"><span className="coin c-usd">$</span>USDC</button>
+        <button className="token-pick" style={{cursor: "default"}} tabIndex={-1}><span className="coin c-usd">$</span>USDC</button>
       </div>
     </div>
 

@@ -1,3 +1,4 @@
+import { LOGO } from "../logo";
 export default function ActivityView() {
   return (
     <>

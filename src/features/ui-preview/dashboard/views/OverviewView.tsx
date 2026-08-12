@@ -84,7 +84,7 @@ export default function OverviewView() {
                 </div>
               </div>
             </div>
-            <div className="card pf-mini wh-mini accent-gold" id="whMiniCard" role="button" tabIndex="0" aria-label="View assets in your wallet">
+            <div className="card pf-mini wh-mini accent-gold" id="whMiniCard" role="button" tabIndex={0} aria-label="View assets in your wallet">
               <div className="pf-ap-head">
                 <div className="card-label">In your wallet</div>
                 <span className="wh-mini-link">Details →</span>

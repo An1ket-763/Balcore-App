@@ -11,9 +11,9 @@ export default function ProtocolView() {
             </div>
           </div>
           <div className="flow-row">
-            <div className="flow-cell income flow-cell-btn" data-detail="income" role="button" tabIndex="0"><span className="fc-k">Fees collected<svg className="fc-chev" width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span className="fc-v mint" id="flowIncome">$466,100</span></div>
+            <div className="flow-cell income flow-cell-btn" data-detail="income" role="button" tabIndex={0}><span className="fc-k">Fees collected<svg className="fc-chev" width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span className="fc-v mint" id="flowIncome">$466,100</span></div>
             <div className="flow-cell"><span className="fc-k">IL covered</span><span className="fc-v gold" id="flowIL">$28,000</span></div>
-            <div className="flow-cell flow-cell-btn" data-detail="users" role="button" tabIndex="0"><span className="fc-k">Distributed to users<svg className="fc-chev" width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span className="fc-v mint" id="flowUsers">$312,400</span></div>
+            <div className="flow-cell flow-cell-btn" data-detail="users" role="button" tabIndex={0}><span className="fc-k">Distributed to users<svg className="fc-chev" width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span className="fc-v mint" id="flowUsers">$312,400</span></div>
             <div className="flow-cell"><span className="fc-k">Protocol revenue</span><span className="fc-v" id="flowProto" style={{color: "var(--violet)"}}>$37,700</span></div>
             <div className="flow-cell"><span className="fc-k">Surplus reserve</span><span className="fc-v gold" id="flowReserve">$88,000</span></div>
           </div>
