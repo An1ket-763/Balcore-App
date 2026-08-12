@@ -1,5 +1,11 @@
+import { useAccount, useDisconnect } from "wagmi";
 import { LOGO } from "./logo";
-export default function Sidebar() {
+import { shortenAddress } from "./walletUtils";
+export default function Sidebar({ displayName = "" }) {
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const short = shortenAddress(address);
+
   return (
     <>
   <aside className="side">
