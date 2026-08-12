@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
+// @ts-ignore: side-effect import for CSS file without module declarations
 import "./dashboard.css";
 import Onboarding from "./Onboarding";
 import Sidebar from "./Sidebar";
@@ -28,7 +29,11 @@ export default function DashboardApp() {
 
   useEffect(() => {
     if (!ready) return;
-    initDashboardScripts();
+    try {
+      initDashboardScripts();
+    } catch (err) {
+      console.error("[balcore] initDashboardScripts failed:", err);
+    }
   }, [ready]);
 
   if (!ready) {
@@ -46,7 +51,7 @@ export default function DashboardApp() {
     <div className="app">
       <Sidebar displayName={displayName} />
       <main className="main">
-        <Topnav onConnectClick={() => {}} />
+        <Topnav onConnectClick={() => { }} />
         <OverviewView />
         <ProtocolView />
         <ActivityView />
