@@ -56,8 +56,18 @@ export default function Sidebar() {
     <div className="user">
       <div className="avatar" aria-hidden="true"></div>
       <div className="user-id">
-        <b>Josh</b>
-        <span>0xdeA…db3 · Connected</span>
+        <b>{displayName || short || "Guest"}</b>
+        <span>
+          {isConnected ? `${short} · Connected` : "Not connected"}
+          {isConnected && (
+            <>
+              {" · "}
+              <button type="button" className="side-disconnect" onClick={() => disconnect()}>
+                Disconnect
+              </button>
+            </>
+          )}
+        </span>
       </div>
       <button className="user-settings" id="themeToggleSide" data-theme-toggle={true} aria-label="Switch to light mode" aria-pressed="false" title="Toggle theme">
         <svg className="ic-sun" width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.5" /><path d="M8 1.2v1.8M8 13v1.8M1.2 8H3M13 8h1.8M3.2 3.2l1.3 1.3M11.5 11.5l1.3 1.3M12.8 3.2l-1.3 1.3M4.5 11.5l-1.3 1.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
