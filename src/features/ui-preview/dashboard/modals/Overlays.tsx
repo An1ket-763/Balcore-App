@@ -207,7 +207,7 @@ export default function Overlays() {
         <div className="m-row"><span className="k">Rate</span><span className="v" id="swapRate">1 BTC = 63,200 USDC</span></div>
         <div className="m-row"><span className="k">Routed via</span><span className="v" id="swapVia">Pharaoh</span></div>
         <div className="m-row"><span className="k">Min received</span><span className="v" id="swapMinOut">—</span></div>
-        <div className="m-row"><span className="k">Price impact</span><span className="v" id="swapImpact"><0.01%</span></div>
+        <div className="m-row"><span className="k">Price impact</span><span className="v" id="swapImpact">{"<0.01%"}</span></div>
         <div className="m-row"><span className="k">Network fee</span><span className="v">≈ $0.02 · Avalanche</span></div>
       </div>
     </div>
