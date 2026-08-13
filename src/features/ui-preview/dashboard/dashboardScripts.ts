@@ -245,18 +245,20 @@ window.__countUp = function(el){
     if (foot) foot.style.display = isOverview ? '' : 'none';
 
     // title: type the greeting on the first Overview view, set instantly otherwise
-    if (isOverview && !greeted && !reduce){
-      greeted = true;
-      sub.classList.remove('show');
-      typeGreeting(()=> sub.classList.add('show'));
-    } else if (isOverview){
-      h1.innerHTML = buildGreeting();
-      greeted = true;
-      sub.classList.add('show');
-    } else {
-      h1.textContent = titles[name] || name;
-      greeted = true;
-      sub.classList.remove('show');
+    if (h1 && sub) {
+      if (isOverview && !greeted && !reduce){
+        greeted = true;
+        sub.classList.remove('show');
+        typeGreeting(()=> sub.classList.add('show'));
+      } else if (isOverview){
+        h1.innerHTML = buildGreeting();
+        greeted = true;
+        sub.classList.add('show');
+      } else {
+        h1.textContent = titles[name] || name;
+        greeted = true;
+        sub.classList.remove('show');
+      }
     }
 
     document.querySelectorAll('.nav-item[data-view]').forEach(a=> a.classList.toggle('active', a.dataset.view===name));
