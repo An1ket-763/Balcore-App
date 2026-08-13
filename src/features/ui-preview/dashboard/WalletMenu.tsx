@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useBalance, useDisconnect } from "wagmi";
 import { shortenAddress } from "./walletUtils";
 
 /**
@@ -7,6 +7,7 @@ import { shortenAddress } from "./walletUtils";
  */
 export default function WalletMenu({ onConnectClick }: { onConnectClick: () => void }) {
   const { address, isConnected, chain } = useAccount();
+  const { data: balance, isLoading: balanceLoading } = useBalance({ address });
   const { disconnect } = useDisconnect();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -59,6 +60,15 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
             <span className="live-dot"></span>
             {chain?.name ?? "Avalanche Fuji"}
           </div>
+          {address && (
+            <div className="wm-balance">
+              {balanceLoading ? (
+                <span style={{ opacity: 0.5 }}>Loading balance…</span>
+              ) : (
+                <>{Number(balance?.formatted ?? 0).toFixed(4)} AVAX</>
+              )}
+            </div>
+          )}
         </div>
         <button
           className="wallet-menu-item"
