@@ -7,7 +7,10 @@ import { shortenAddress } from "./walletUtils";
  */
 export default function WalletMenu({ onConnectClick }: { onConnectClick: () => void }) {
   const { address, isConnected, chain } = useAccount();
-  const { data: balance, isLoading: balanceLoading } = useBalance({ address });
+  const { data: balance, isLoading: balanceLoading } = useBalance({
+    address,
+    query: { enabled: !!address },
+  });
   const { disconnect } = useDisconnect();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
