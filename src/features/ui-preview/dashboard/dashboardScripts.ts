@@ -1175,14 +1175,6 @@ window.__countUp = function(el){
 
 (function(){var pf=document.getElementById("poolFees"),t=document.getElementById("poolFeesToggle");if(pf&&t)t.addEventListener("click",function(){var o=pf.classList.toggle("open");t.setAttribute("aria-expanded",o?"true":"false");});})();
 (function(){var d=document.getElementById("wdDetails"),t=document.getElementById("wdDetToggle");if(d&&t)t.addEventListener("click",function(){var o=d.classList.toggle("open");t.setAttribute("aria-expanded",o?"true":"false");});})();
-(function(){
-  var wt=document.getElementById("widthToggle"), app=document.querySelector(".app"); if(!wt||!app) return;
-  function apply(m){ app.classList.toggle("wide", m==="wide");
-    wt.querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.dataset.w===m); }); }
-  var saved="fit"; try{ saved=localStorage.getItem("balcoreWidth")||"fit"; }catch(e){}
-  apply(saved);
-  wt.querySelectorAll("button").forEach(function(b){ b.addEventListener("click",function(){ apply(b.dataset.w); try{ localStorage.setItem("balcoreWidth", b.dataset.w); }catch(e){} }); });
-})();
 
 (function(){
   var KEY="balcoreTheme", root=document.documentElement,

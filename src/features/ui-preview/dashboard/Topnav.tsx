@@ -12,10 +12,6 @@ export default function Topnav({ onConnectClick }: { onConnectClick: () => void 
       </div>
       <div className="top-actions">
         <button className="theme-btn" id="themeToggle" data-theme-toggle={true} aria-label="Switch to light mode" aria-pressed="false" title="Toggle theme"><svg className="ic-sun" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.5" /><path d="M8 1.2v1.8M8 13v1.8M1.2 8H3M13 8h1.8M3.2 3.2l1.3 1.3M11.5 11.5l1.3 1.3M12.8 3.2l-1.3 1.3M4.5 11.5l-1.3 1.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg><svg className="ic-moon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5 6 6 0 1 0 13.5 9.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg></button>
-        <div className="width-toggle" id="widthToggle" role="group" aria-label="Layout width">
-          <button data-w="fit" className="on" title="Centered" aria-label="Centered width"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="4" y="3" width="8" height="10" rx="1.4" stroke="currentColor" strokeWidth="1.4" /></svg></button>
-          <button data-w="wide" title="Wide" aria-label="Wide width"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="1.4" stroke="currentColor" strokeWidth="1.4" /></svg></button>
-        </div>
         <button className="swap-btn" id="swapBtn">
           <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M4 5.5h9M10.5 3l2.5 2.5-2.5 2.5M13 11.5H4M6.5 9 4 11.5 6.5 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           Swap

@@ -1108,12 +1108,6 @@ html[data-theme="light"] .lead-you-k{border-color:rgba(91,72,214,.45);background
 .wt-claim.ready:hover{transform:translateY(-1px)}
 .wt-actnote{font-size:11.5px;color:var(--text-3);margin-top:9px;line-height:1.5}
 /* wide-screen layout preference */
-.app.wide .main{max-width:1600px}
-.width-toggle{display:none;align-items:center;gap:2px;background:var(--sh-25);border:1px solid var(--line-soft);border-radius:9px;padding:2px}
-@media (min-width:1500px){.width-toggle{display:inline-flex}}   /* only useful once there's spare width */
-.width-toggle button{display:flex;align-items:center;justify-content:center;width:30px;height:26px;border:0;background:none;color:var(--text-3);border-radius:7px;cursor:pointer;transition:background .12s,color .12s}
-.width-toggle button.on{background:rgba(139,123,245,.16);color:var(--text)}
-.width-toggle button:not(.on):hover{color:var(--text-2)}
 .proto-summary{max-width:1180px;margin:0 auto 16px}
 .flow-card{position:relative;overflow:hidden;background:radial-gradient(120% 90% at 0% 0%, rgba(224,178,92,.13), transparent 55%),linear-gradient(160deg,var(--panel-2),var(--panel));border:1px solid rgba(224,178,92,.16);border-radius:16px;padding:18px 20px;transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
 .flow-card:hover{transform:translateY(-4px);box-shadow:0 22px 46px -22px var(--sh-78),0 0 28px -8px rgba(224,178,92,.30)}
