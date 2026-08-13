@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-// @ts-ignore: side-effect import for CSS file without module declarations
+// @ts-ignore
 import "./dashboard.css";
 import Onboarding from "./Onboarding";
 import Sidebar from "./Sidebar";
@@ -11,18 +11,29 @@ import ActivityView from "./views/ActivityView";
 import Overlays from "./modals/Overlays";
 import { initDashboardScripts } from "./dashboardScripts";
 
-/**
- * Gate: the dashboard UI is not rendered at all until the wallet is connected
- * and onboarding is finished.
- */
+const ONBOARD_KEY = "balcore-onboarded";
+const NAME_KEY = "balcore-display-name";
+
 export default function DashboardApp() {
-  const { isConnected } = useAccount();
+  const { isConnected, address, status } = useAccount();
   const [onboarded, setOnboarded] = useState(false);
   const [displayName, setDisplayName] = useState("");
 
+  const isResuming = status === "connecting" || status === "reconnecting";
+
+  useEffect(() => {
+    if (!address) return;
+    try {
+      const key = address.toLowerCase();
+      if (localStorage.getItem(`${ONBOARD_KEY}:${key}`) === "1") {
+        setOnboarded(true);
+        setDisplayName(localStorage.getItem(`${NAME_KEY}:${key}`) ?? "");
+      }
+    } catch {}
+  }, [address]);
+
   const ready = isConnected && onboarded;
 
-  // reset the gate if the user disconnects
   useEffect(() => {
     if (!isConnected && onboarded) setOnboarded(false);
   }, [isConnected, onboarded]);
@@ -36,12 +47,23 @@ export default function DashboardApp() {
     }
   }, [ready]);
 
+  if (isResuming) {
+    return null;
+  }
+
   if (!ready) {
     return (
       <Onboarding
         onComplete={(name: string) => {
           setDisplayName(name);
           setOnboarded(true);
+          if (address) {
+            try {
+              const key = address.toLowerCase();
+              localStorage.setItem(`${ONBOARD_KEY}:${key}`, "1");
+              localStorage.setItem(`${NAME_KEY}:${key}`, name);
+            } catch {}
+          }
         }}
       />
     );
