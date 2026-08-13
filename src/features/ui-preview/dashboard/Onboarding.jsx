@@ -65,7 +65,6 @@ export default function Onboarding({ onComplete }) {
       // TODO: server-side verification still needs to be added — the signature
       // below is NOT verified anywhere yet. A backend endpoint must recover the
       // address from the message + signature and validate/consume the nonce.
-      console.log("[balcore] SIWE signature", { address, nonce: siwe.nonce, message: siwe.message, signature });
       setStep("name");
     } catch (err) {
       setSignError(err?.shortMessage || err?.message || "Signature rejected");
