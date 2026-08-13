@@ -1,10 +1,6 @@
-import { useAccount, useDisconnect } from "wagmi";
 import { LOGO } from "./logo";
-import { shortenAddress } from "./walletUtils";
 export default function Sidebar({ displayName = "" }) {
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const short = shortenAddress(address);
+  // displayName is kept for API compatibility but no longer rendered here.
 
   return (
     <>
@@ -59,27 +55,6 @@ export default function Sidebar({ displayName = "" }) {
       </div>
     </div>
 
-    <div className="user">
-      <div className="avatar" aria-hidden="true"></div>
-      <div className="user-id">
-        <b>{displayName || short || "Guest"}</b>
-        <span>
-          {isConnected ? `${short} · Connected` : "Not connected"}
-          {isConnected && (
-            <>
-              {" · "}
-              <button type="button" className="side-disconnect" onClick={() => disconnect()}>
-                Disconnect
-              </button>
-            </>
-          )}
-        </span>
-      </div>
-      <button className="user-settings" id="themeToggleSide" data-theme-toggle={true} aria-label="Switch to light mode" aria-pressed="false" title="Toggle theme">
-        <svg className="ic-sun" width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.5" /><path d="M8 1.2v1.8M8 13v1.8M1.2 8H3M13 8h1.8M3.2 3.2l1.3 1.3M11.5 11.5l1.3 1.3M12.8 3.2l-1.3 1.3M4.5 11.5l-1.3 1.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-        <svg className="ic-moon" width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5 6 6 0 1 0 13.5 9.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
-      </button>
-    </div>
   </aside>
     </>
   );
