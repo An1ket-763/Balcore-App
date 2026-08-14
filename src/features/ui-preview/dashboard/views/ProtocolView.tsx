@@ -1,4 +1,7 @@
+import { getPositions } from "../data/positions";
+
 export default function ProtocolView() {
+  const positions = getPositions();
   return (
     <>
     <div className="view" id="viewProtocol" style={{display: "none"}}>
