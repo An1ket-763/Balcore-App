@@ -18,51 +18,18 @@ export default function ActivityView() {
         </div>
 
         <div className="card" style={{padding: "8px 22px"}}>
-          <div className="act-day">This week</div>
-          <div className="act-item" data-atype="fees">
-            <span className="act-ic mint">↑</span>
-            <div className="act-body"><div className="act-t">Fees harvested</div><div className="act-s">Bitcoin / Dollar · auto-compounded</div></div>
-            <div className="act-meta"><div className="act-v mint">+$1,240</div><div className="act-time">Today · 2h ago</div></div>
-          </div>
-          <div className="act-item" data-atype="rebalance">
-            <span className="act-ic violet">⟳</span>
-            <div className="act-body"><div className="act-t">Gold / Dollar rebalanced</div><div className="act-s">Range re-armed · closes Monday</div></div>
-            <div className="act-meta"><div className="act-v">—</div><div className="act-time">Today · 6h ago</div></div>
-          </div>
-          <div className="act-item" data-atype="fees">
-            <span className="act-ic mint">↑</span>
-            <div className="act-body"><div className="act-t">Fees harvested</div><div className="act-s">Tesla / Dollar · auto-compounded</div></div>
-            <div className="act-meta"><div className="act-v mint">+$610</div><div className="act-time">Yesterday</div></div>
-          </div>
-
-          <div className="act-day">Last week</div>
-          <div className="act-item" data-atype="settlement">
-            <span className="act-ic mint">✓</span>
-            <div className="act-body"><div className="act-t">Weekly settlement</div><div className="act-s">All pools · fees compounded, IL covered</div></div>
-            <div className="act-meta"><div className="act-v mint">+$18,420</div><div className="act-time">Mon Jul 6 · 23:00 UTC</div></div>
-          </div>
-          <div className="act-item" data-atype="transfer">
-            <span className="act-ic neutral">↓</span>
-            <div className="act-body"><div className="act-t">Deposit</div><div className="act-s">Added to pools · split across pairs</div></div>
-            <div className="act-meta"><div className="act-v">$50,000</div><div className="act-time">Thu Jul 3</div></div>
-          </div>
-          <div className="act-item" data-atype="rebalance">
-            <span className="act-ic violet">⟳</span>
-            <div className="act-body"><div className="act-t">Bitcoin / Dollar rebalanced</div><div className="act-s">Range shifted up · price moved</div></div>
-            <div className="act-meta"><div className="act-v">—</div><div className="act-time">Wed Jul 2</div></div>
-          </div>
-
-          <div className="act-day">Earlier</div>
-          <div className="act-item" data-atype="settlement">
-            <span className="act-ic mint">✓</span>
-            <div className="act-body"><div className="act-t">Weekly settlement</div><div className="act-s">All pools · fees compounded, IL covered</div></div>
-            <div className="act-meta"><div className="act-v mint">+$17,880</div><div className="act-time">Mon Jun 29 · 23:00 UTC</div></div>
-          </div>
-          <div className="act-item" data-atype="transfer">
-            <span className="act-ic neutral">↑</span>
-            <div className="act-body"><div className="act-t">Withdrawal</div><div className="act-s">Settled on the weekly cycle</div></div>
-            <div className="act-meta"><div className="act-v">−$12,000</div><div className="act-time">Mon Jun 29</div></div>
-          </div>
+          {days.map((day) => (
+            <Fragment key={day}>
+              <div className="act-day">{day}</div>
+              {items.filter((i) => i.day === day).map((i, idx) => (
+                <div className="act-item" data-atype={i.type} key={day + idx}>
+                  <span className={"act-ic " + i.iconTone}>{i.icon}</span>
+                  <div className="act-body"><div className="act-t">{i.title}</div><div className="act-s">{i.subtitle}</div></div>
+                  <div className="act-meta"><div className={"act-v" + (i.valueTone ? " " + i.valueTone : "")}>{i.value}</div><div className="act-time">{i.time}</div></div>
+                </div>
+              ))}
+            </Fragment>
+          ))}
           <div className="act-empty" id="actEmpty" style={{display: "none"}}>No activity of this type yet.</div>
         </div>
       </div>
