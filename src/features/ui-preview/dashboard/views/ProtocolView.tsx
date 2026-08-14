@@ -1,4 +1,7 @@
+import { getPositions } from "../data/positions";
+
 export default function ProtocolView() {
+  const positions = getPositions();
   return (
     <>
     <div className="view" id="viewProtocol" style={{display: "none"}}>
@@ -110,23 +113,13 @@ export default function ProtocolView() {
           <div className="card hoverpop">
             <div className="card-label" style={{marginBottom: "18px"}}>Positioning · where liquidity sits</div>
 
-            <div className="pos-range">
-              <div className="pr-head"><span className="pr-name">Bitcoin / Dollar</span><span className="st ok"><span className="d"></span>In range</span></div>
-              <div className="pr-track"><div className="pr-band" style={{left: "22%", width: "56%"}}></div><div className="pr-mark" style={{left: "44%"}}></div></div>
-              <div className="pr-labels"><span>$58.5k</span><span style={{color: "var(--text-2)"}}>now ~$63.2k</span><span>$69.5k</span></div>
-            </div>
-
-            <div className="pos-range">
-              <div className="pr-head"><span className="pr-name">Tesla / Dollar</span><span className="st ok"><span className="d"></span>In range</span></div>
-              <div className="pr-track"><div className="pr-band" style={{left: "20%", width: "58%"}}></div><div className="pr-mark" style={{left: "46%"}}></div></div>
-              <div className="pr-labels"><span>$298</span><span style={{color: "var(--text-2)"}}>now ~$322</span><span>$352</span></div>
-            </div>
-
-            <div className="pos-range">
-              <div className="pr-head"><span className="pr-name">Gold / Dollar</span><span className="st rb"><span className="d"></span>Rebalancing</span></div>
-              <div className="pr-track"><div className="pr-band rb" style={{left: "30%", width: "44%"}}></div><div className="pr-mark" style={{left: "72%"}}></div></div>
-              <div className="pr-labels"><span>$3,180</span><span style={{color: "var(--gold)"}}>re-arming · closes Mon</span><span>$3,460</span></div>
-            </div>
+            {positions.map((p) => (
+              <div className="pos-range" key={p.name}>
+                <div className="pr-head"><span className="pr-name">{p.name}</span><span className={"st " + p.status}><span className="d"></span>{p.statusLabel}</span></div>
+                <div className="pr-track"><div className={"pr-band" + (p.band.rebalancing ? " rb" : "")} style={{left: p.band.left, width: p.band.width}}></div><div className="pr-mark" style={{left: p.markLeft}}></div></div>
+                <div className="pr-labels"><span>{p.low}</span><span style={{color: p.midColor}}>{p.midLabel}</span><span>{p.high}</span></div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
