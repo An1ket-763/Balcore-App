@@ -1,5 +1,10 @@
 import { LOGO } from "../logo";
+import { getActivity } from "../data/activity";
+
 export default function ActivityView() {
+  const items = getActivity();
+  const days: string[] = [];
+  items.forEach((i) => { if (!days.includes(i.day)) days.push(i.day); });
   return (
     <>
     <div className="view" id="viewActivity" style={{display: "none"}}>
