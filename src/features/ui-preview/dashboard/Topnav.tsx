@@ -1,8 +1,10 @@
 import { LOGO } from "./logo";
 import WalletMenu from "./WalletMenu";
+import WrongNetworkBanner from "./WrongNetworkBanner";
 export default function Topnav({ onConnectClick }: { onConnectClick: () => void }) {
   return (
     <>
+    <WrongNetworkBanner />
     <a className="m-brand" href="#" aria-label="Balcore home"><img src={LOGO} width="24" height="24" alt="" /> Balcore</a>
     <div className="topnav">
       <div className="search-bar">
