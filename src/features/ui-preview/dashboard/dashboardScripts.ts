@@ -6,6 +6,9 @@
  * micro-flows). Wallet connection, onboarding and the connected-address UI are
  * real React components and are NOT handled here.
  */
+import { getTokenPrices } from "./data/prices";
+import { getTokenBalances } from "./data/balances";
+
 let started = false;
 export function initDashboardScripts() {
   if (started) return;
