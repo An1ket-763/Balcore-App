@@ -553,14 +553,20 @@ window.__countUp = function(el){
     const bestTag = document.querySelector('.route-best-tag');
     const routeListEl = document.getElementById('routeList');
 
-    const TOKENS = {
-      USDC:{name:'USD Coin',  usd:1,     bal:14200, coin:'<span class="coin c-usd"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="1.6"/><path d="M12 7.2v9.6M10.1 9.1c0-1 .9-1.5 1.9-1.5s1.9.4 1.9 1.4c0 .9-.7 1.3-1.9 1.5-1.2.2-1.9.6-1.9 1.5 0 1 .9 1.4 1.9 1.4s1.9-.5 1.9-1.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg></span>'},
-      BTC: {name:'Bitcoin',   usd:63200, bal:0.34,  coin:'<span class="coin c-btc"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5.5v13M11.3 5v14M8 7h5.4c1.6 0 2.8.9 2.8 2.5S15 12 13.4 12H8m0 0h5.9c1.7 0 2.9.9 2.9 2.5S15.6 17 13.9 17H8" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'},
-      ETH: {name:'Ethereum',  usd:3200,  bal:2.1,   coin:'<span class="coin c-eth"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 6 12.2 12 15.8 18 12.2 12 3Z" fill="#fff" opacity=".9"/><path d="M6 13.4 12 17l6-3.6L12 21 6 13.4Z" fill="#fff" opacity=".55"/></svg></span>'},
-      AVAX:{name:'Avalanche', usd:38,    bal:640,   coin:'<span class="coin c-avax"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5.2 20 18.4c.3.5 0 1.1-.6 1.1h-3.1c-.4 0-.7-.2-.9-.5l-2.7-4.8c-.3-.6-1.2-.6-1.5 0l-.9 1.6c-.3.5-.9.5-1.2 0l-.6-1.1c-.2-.4-.2-.9 0-1.3l3.6-6.8c.3-.6 1.2-.6 1.5 0Z" fill="#fff"/><path d="M8.2 15.2c.3-.5 1-.5 1.3 0l1.9 3.3c.3.5 0 1.1-.6 1.1H7c-.6 0-.9-.6-.6-1.1l1.8-3.3Z" fill="#fff"/></svg></span>'},
-      TSLA:{name:'Tesla',     usd:330,   bal:12,    coin:'<span class="coin c-tsla"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8.3 13.4 6c2.4.1 4.6.7 4.6.7l.7-1.3S16.6 4.4 12 4.4 6.3 5.4 6.3 5.4L7 6.7s2.2-.6 4.6-.7L13 8.3h-2v11h1.9V8.3H12Z" fill="#fff"/></svg></span>'},
-      GOLD:{name:'Gold',      usd:2400,  bal:3.5,   coin:'<span class="coin c-gold"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8.6 9.5h6.8c.4 0 .7.2.8.6l1.5 4.7c.2.5-.2 1-.7 1H6.9c-.5 0-.9-.5-.7-1l1.5-4.7c.1-.4.5-.6.9-.6Z" fill="#503f10"/><path d="M9.7 6.4h4.6c.3 0 .6.2.7.5l1 3H8l1-3c.1-.3.4-.5.7-.5Z" fill="#503f10" opacity=".8"/></svg></span>'}
+    const COIN_ICONS = {
+      USDC:'<span class="coin c-usd"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="1.6"/><path d="M12 7.2v9.6M10.1 9.1c0-1 .9-1.5 1.9-1.5s1.9.4 1.9 1.4c0 .9-.7 1.3-1.9 1.5-1.2.2-1.9.6-1.9 1.5 0 1 .9 1.4 1.9 1.4s1.9-.5 1.9-1.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg></span>',
+      BTC: '<span class="coin c-btc"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5.5v13M11.3 5v14M8 7h5.4c1.6 0 2.8.9 2.8 2.5S15 12 13.4 12H8m0 0h5.9c1.7 0 2.9.9 2.9 2.5S15.6 17 13.9 17H8" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>',
+      ETH: '<span class="coin c-eth"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 6 12.2 12 15.8 18 12.2 12 3Z" fill="#fff" opacity=".9"/><path d="M6 13.4 12 17l6-3.6L12 21 6 13.4Z" fill="#fff" opacity=".55"/></svg></span>',
+      AVAX:'<span class="coin c-avax"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5.2 20 18.4c.3.5 0 1.1-.6 1.1h-3.1c-.4 0-.7-.2-.9-.5l-2.7-4.8c-.3-.6-1.2-.6-1.5 0l-.9 1.6c-.3.5-.9.5-1.2 0l-.6-1.1c-.2-.4-.2-.9 0-1.3l3.6-6.8c.3-.6 1.2-.6 1.5 0Z" fill="#fff"/><path d="M8.2 15.2c.3-.5 1-.5 1.3 0l1.9 3.3c.3.5 0 1.1-.6 1.1H7c-.6 0-.9-.6-.6-1.1l1.8-3.3Z" fill="#fff"/></svg></span>',
+      TSLA:'<span class="coin c-tsla"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8.3 13.4 6c2.4.1 4.6.7 4.6.7l.7-1.3S16.6 4.4 12 4.4 6.3 5.4 6.3 5.4L7 6.7s2.2-.6 4.6-.7L13 8.3h-2v11h1.9V8.3H12Z" fill="#fff"/></svg></span>',
+      GOLD:'<span class="coin c-gold"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8.6 9.5h6.8c.4 0 .7.2.8.6l1.5 4.7c.2.5-.2 1-.7 1H6.9c-.5 0-.9-.5-.7-1l1.5-4.7c.1-.4.5-.6.9-.6Z" fill="#503f10"/><path d="M9.7 6.4h4.6c.3 0 .6.2.7.5l1 3H8l1-3c.1-.3.4-.5.7-.5Z" fill="#503f10" opacity=".8"/></svg></span>'
     };
+    const PRICES = getTokenPrices();
+    const BALANCES = getTokenBalances();
+    const TOKENS = {};
+    Object.keys(COIN_ICONS).forEach(function(sym){
+      TOKENS[sym] = { name: PRICES[sym].name, usd: PRICES[sym].usd, bal: BALANCES[sym], coin: COIN_ICONS[sym] };
+    });
     const ORDER = ['USDC','BTC','ETH','AVAX','TSLA','GOLD'];
     let fromSym='USDC', toSym='BTC', slip=0.5;
     const chev = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
