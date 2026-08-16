@@ -10,7 +10,7 @@ export default function WrongNetworkBanner() {
   }
 
   return (
-    <div className="risk-banner">
+    <div className="notice">
       You're connected to {chain?.name ?? "an unsupported network"}. Switch to {defaultChain.name} to use Balcore.
       <button onClick={() => switchChain({ chainId: defaultChain.id })}>
         Switch network
