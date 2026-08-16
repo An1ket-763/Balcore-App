@@ -507,6 +507,12 @@ export default function Overlays() {
     </div>
 
     <button className="cta" id="depCta" disabled={true}>Enter an amount</button>
+    <div className="br-done" id="depDone" hidden={true}>
+      <div className="bd-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+      <h3>Deposit confirmed</h3>
+      <div className="bd-amt" id="depDoneAmt"></div>
+      <button className="cta" id="depDoneClose">Done</button>
+    </div>
     <div className="m-foot">Illustrative figures. Returns vary with market conditions.</div>
     </div>
   </div>
