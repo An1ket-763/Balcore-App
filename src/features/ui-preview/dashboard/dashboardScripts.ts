@@ -789,7 +789,37 @@ window.__countUp = function(el){
   const ackGo = document.getElementById('ackGo');
   dCta.addEventListener('click',()=>{ if(dCta.disabled) return; buildAck(); if(ack) ack.hidden=false; });
   if (ackBack) ackBack.addEventListener('click',()=>{ if(ack) ack.hidden=true; });
-  if (ackGo) ackGo.addEventListener('click',()=>{ if(ack) ack.hidden=true; dCta.disabled=true; dCta.textContent='Confirm in wallet…'; });
+  if (ackGo) ackGo.addEventListener('click',()=>{
+    if(ack) ack.hidden=true;
+    dCta.disabled=true;
+    dCta.textContent='Confirm in wallet…';
+    const deposited = dAmt ? dAmt.value : '';
+    setTimeout(()=>{
+      const depDone = document.getElementById('depDone');
+      const depDoneAmt = document.getElementById('depDoneAmt');
+      const walletPanel = document.getElementById('depWalletPanel');
+      if(walletPanel) walletPanel.hidden = true;
+      dCta.hidden = true;
+      if(depDone) depDone.hidden = false;
+      if(depDoneAmt){
+        const v = parseFloat((deposited||'').replace(/,/g,'')) || 0;
+        depDoneAmt.textContent = v ? fmt(v) + ' deposited' : 'Deposit confirmed';
+      }
+    }, 1500);
+  });
+  const depDoneClose = document.getElementById('depDoneClose');
+  if(depDoneClose) depDoneClose.addEventListener('click',()=>{
+    close(ovD);
+    dAmt.value = '';
+    dCta.disabled = true; dCta.textContent = 'Enter an amount'; dCta.hidden = false;
+    const walletPanel = document.getElementById('depWalletPanel');
+    if(walletPanel) walletPanel.hidden = false;
+    const depDone = document.getElementById('depDone');
+    if(depDone) depDone.hidden = true;
+    if(dBtc) dBtc.textContent = '—';
+    if(dUsd) dUsd.textContent = '—';
+    document.querySelectorAll('#depQuick button').forEach(x=>x.classList.remove('on'));
+  });
   if (ack) ack.addEventListener('click',(e)=>{ if(e.target===ack) ack.hidden=true; });
   addEventListener('keydown',(e)=>{ if(e.key==='Escape' && ack && !ack.hidden) ack.hidden=true; });
 
