@@ -199,6 +199,12 @@ export default function Overlays() {
     </div>
 
     <button className="cta" id="swapCta" disabled={true}>Enter an amount</button>
+    <div className="br-done" id="swapDone" hidden={true}>
+      <div className="bd-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+      <h3>Swap complete</h3>
+      <div className="bd-amt" id="swapDoneAmt"></div>
+      <button className="cta" id="swapDoneClose">Done</button>
+    </div>
     <div className="swap-details" id="swapDetails">
       <div className="swap-det-row">
         <span className="swap-det-rate" id="swapDetSummary">1 BTC ≈ 63,200 USDC ($63,200.00)</span>

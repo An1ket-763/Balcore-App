@@ -706,7 +706,41 @@ window.__countUp = function(el){
       clearTimeout(scanTimer); scanTimer = setTimeout(runScan, 250);
     }); });
     from.addEventListener('input', function(){ pctBtns.forEach(function(x){ x.classList.remove('on'); }); });
-    cta.addEventListener('click', function(){ cta.disabled = true; cta.textContent = 'Confirm in wallet\u2026'; });
+    cta.addEventListener('click', function(){
+      cta.disabled = true;
+      cta.textContent = 'Confirm in wallet\u2026';
+      const fromAmt = from.value;
+      const toAmt = to.value;
+      const fromSymbol = fromSym;
+      const toSymbol = toSym;
+      setTimeout(function(){
+        const swapDone = document.getElementById('swapDone');
+        const swapDoneAmt = document.getElementById('swapDoneAmt');
+        const swapFields = document.querySelectorAll('#ovSwap .swap-field, #ovSwap .swap-mid, #ovSwap .route-block, #ovSwap .slip-block, #ovSwap .notice.green');
+        swapFields.forEach(function(el){ el.style.display = 'none'; });
+        cta.hidden = true;
+        if(swapDone) swapDone.hidden = false;
+        if(swapDoneAmt){
+          swapDoneAmt.textContent = (fromAmt && toAmt)
+            ? fromAmt + ' ' + fromSymbol + ' \u2192 ' + toAmt + ' ' + toSymbol + ' swapped'
+            : 'Swap complete';
+        }
+      }, 1500);
+    });
+    const swapDoneClose = document.getElementById('swapDoneClose');
+    if(swapDoneClose) swapDoneClose.addEventListener('click', function(){
+      close(ovS);
+      from.value = '';
+      to.value = '';
+      cta.disabled = true;
+      cta.textContent = 'Enter an amount';
+      cta.hidden = false;
+      document.querySelectorAll('#swapPct .swap-pct-btn').forEach(function(x){ x.classList.remove('on'); });
+      const swapDone = document.getElementById('swapDone');
+      if(swapDone) swapDone.hidden = true;
+      const swapFields = document.querySelectorAll('#ovSwap .swap-field, #ovSwap .swap-mid, #ovSwap .route-block, #ovSwap .slip-block, #ovSwap .notice.green');
+      swapFields.forEach(function(el){ el.style.display = ''; });
+    });
 
     // init
     assignQuotes(); renderTokens(); selectBest(); markBest(); refresh();
