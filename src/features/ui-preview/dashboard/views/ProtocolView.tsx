@@ -113,13 +113,17 @@ export default function ProtocolView() {
           <div className="card hoverpop">
             <div className="card-label" style={{marginBottom: "18px"}}>Positioning · where liquidity sits</div>
 
-            {positions.map((p) => (
-              <div className="pos-range" key={p.name}>
-                <div className="pr-head"><span className="pr-name">{p.name}</span><span className={"st " + p.status}><span className="d"></span>{p.statusLabel}</span></div>
-                <div className="pr-track"><div className={"pr-band" + (p.band.rebalancing ? " rb" : "")} style={{left: p.band.left, width: p.band.width}}></div><div className="pr-mark" style={{left: p.markLeft}}></div></div>
-                <div className="pr-labels"><span>{p.low}</span><span style={{color: p.midColor}}>{p.midLabel}</span><span>{p.high}</span></div>
-              </div>
-            ))}
+            {positions.length === 0 ? (
+              <div className="act-empty">No positions yet — deposit to get started.</div>
+            ) : (
+              positions.map((p) => (
+                <div className="pos-range" key={p.name}>
+                  <div className="pr-head"><span className="pr-name">{p.name}</span><span className={"st " + p.status}><span className="d"></span>{p.statusLabel}</span></div>
+                  <div className="pr-track"><div className={"pr-band" + (p.band.rebalancing ? " rb" : "")} style={{left: p.band.left, width: p.band.width}}></div><div className="pr-mark" style={{left: p.markLeft}}></div></div>
+                  <div className="pr-labels"><span>{p.low}</span><span style={{color: p.midColor}}>{p.midLabel}</span><span>{p.high}</span></div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
