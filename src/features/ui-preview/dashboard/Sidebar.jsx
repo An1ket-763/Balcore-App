@@ -1,6 +1,14 @@
+import { useAccount } from "wagmi";
+import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
 export default function Sidebar({ displayName = "" }) {
   // displayName is kept for API compatibility but no longer rendered here.
+  const { isConnected, chain } = useAccount();
+  const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
+
+  const disabledLinkProps = wrongNetwork
+    ? { "aria-disabled": true, title: "Switch to Avalanche Fuji to use this", style: { opacity: 0.45, pointerEvents: "none" }, onClick: (e) => e.preventDefault() }
+    : {};
 
   return (
     <>
