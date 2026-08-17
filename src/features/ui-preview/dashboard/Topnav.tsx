@@ -1,7 +1,12 @@
+import { useAccount } from "wagmi";
+import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
 import WalletMenu from "./WalletMenu";
 import WrongNetworkBanner from "./WrongNetworkBanner";
 export default function Topnav({ onConnectClick }: { onConnectClick: () => void }) {
+  const { isConnected, chain } = useAccount();
+  const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
+
   return (
     <>
     <WrongNetworkBanner />
@@ -14,7 +19,14 @@ export default function Topnav({ onConnectClick }: { onConnectClick: () => void 
       </div>
       <div className="top-actions">
         <button className="theme-btn" id="themeToggle" data-theme-toggle={true} aria-label="Switch to light mode" aria-pressed="false" title="Toggle theme"><svg className="ic-sun" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.5" /><path d="M8 1.2v1.8M8 13v1.8M1.2 8H3M13 8h1.8M3.2 3.2l1.3 1.3M11.5 11.5l1.3 1.3M12.8 3.2l-1.3 1.3M4.5 11.5l-1.3 1.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg><svg className="ic-moon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5 6 6 0 1 0 13.5 9.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg></button>
-        <button className="swap-btn" id="swapBtn">
+        <button
+          className="swap-btn"
+          id="swapBtn"
+          aria-disabled={wrongNetwork ? true : undefined}
+          title={wrongNetwork ? "Switch to Avalanche Fuji to use this" : undefined}
+          style={wrongNetwork ? { opacity: 0.45 } : undefined}
+          onClick={wrongNetwork ? (e) => { e.preventDefault(); e.stopPropagation(); } : undefined}
+        >
           <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M4 5.5h9M10.5 3l2.5 2.5-2.5 2.5M13 11.5H4M6.5 9 4 11.5 6.5 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           Swap
         </button>
