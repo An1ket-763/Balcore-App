@@ -19,19 +19,25 @@ export default function ActivityView() {
         </div>
 
         <div className="card" style={{padding: "8px 22px"}}>
-          {days.map((day) => (
-            <Fragment key={day}>
-              <div className="act-day">{day}</div>
-              {items.filter((i) => i.day === day).map((i, idx) => (
-                <div className="act-item" data-atype={i.type} key={day + idx}>
-                  <span className={"act-ic " + i.iconTone}>{i.icon}</span>
-                  <div className="act-body"><div className="act-t">{i.title}</div><div className="act-s">{i.subtitle}</div></div>
-                  <div className="act-meta"><div className={"act-v" + (i.valueTone ? " " + i.valueTone : "")}>{i.value}</div><div className="act-time">{i.time}</div></div>
-                </div>
+          {items.length === 0 ? (
+            <div className="act-empty">No activity yet.</div>
+          ) : (
+            <>
+              {days.map((day) => (
+                <Fragment key={day}>
+                  <div className="act-day">{day}</div>
+                  {items.filter((i) => i.day === day).map((i, idx) => (
+                    <div className="act-item" data-atype={i.type} key={day + idx}>
+                      <span className={"act-ic " + i.iconTone}>{i.icon}</span>
+                      <div className="act-body"><div className="act-t">{i.title}</div><div className="act-s">{i.subtitle}</div></div>
+                      <div className="act-meta"><div className={"act-v" + (i.valueTone ? " " + i.valueTone : "")}>{i.value}</div><div className="act-time">{i.time}</div></div>
+                    </div>
+                  ))}
+                </Fragment>
               ))}
-            </Fragment>
-          ))}
-          <div className="act-empty" id="actEmpty" style={{display: "none"}}>No activity of this type yet.</div>
+              <div className="act-empty" id="actEmpty" style={{display: "none"}}>No activity of this type yet.</div>
+            </>
+          )}
         </div>
       </div>
     </div>
