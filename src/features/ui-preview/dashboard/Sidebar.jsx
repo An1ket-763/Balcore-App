@@ -24,11 +24,11 @@ export default function Sidebar({ displayName = "" }) {
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2" y="2" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="9.5" y="2" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="2" y="9.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" /></svg>
         Overview
       </a>
-      <a className="nav-item" href="#" id="navDeposit">
+      <a className="nav-item" href="#" id="navDeposit" {...disabledLinkProps}>
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 12.5v-10M4.5 6.5l4-4 4 4M2.5 14.5h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         Deposit
       </a>
-      <a className="nav-item" href="#" id="navWithdraw">
+      <a className="nav-item" href="#" id="navWithdraw" {...disabledLinkProps}>
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 2.5v10M4.5 8.5l4 4 4-4M2.5 14.5h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         Withdraw
       </a>
