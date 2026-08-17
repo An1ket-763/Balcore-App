@@ -24,7 +24,7 @@ export default function Topnav({ onConnectClick }: { onConnectClick: () => void 
           id="swapBtn"
           aria-disabled={wrongNetwork ? true : undefined}
           title={wrongNetwork ? "Switch to Avalanche Fuji to use this" : undefined}
-          style={wrongNetwork ? { opacity: 0.45 } : undefined}
+          style={wrongNetwork ? { opacity: 0.45, pointerEvents: "none" } : undefined}
           onClick={wrongNetwork ? (e) => { e.preventDefault(); e.stopPropagation(); } : undefined}
         >
           <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M4 5.5h9M10.5 3l2.5 2.5-2.5 2.5M13 11.5H4M6.5 9 4 11.5 6.5 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
