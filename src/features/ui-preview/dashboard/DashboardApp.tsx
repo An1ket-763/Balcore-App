@@ -35,23 +35,17 @@ export default function DashboardApp() {
   const ready = isConnected && onboarded;
 
   useEffect(() => {
+    if (isResuming) return;
     if (!isConnected && onboarded) setOnboarded(false);
-  }, [isConnected, onboarded]);
+  }, [isConnected, onboarded, isResuming]);
 
-  useEffect(() => {
-    if (!ready) return;
-    try {
-      initDashboardScripts();
-    } catch (err) {
-      console.error("[balcore] initDashboardScripts failed:", err);
-    }
-  }, [ready]);
-
-  if (isResuming) {
+  // Keep the dashboard mounted while the wallet resumes/switches network,
+  // otherwise the imperative script listeners are lost on remount.
+  if (isResuming && !onboarded) {
     return null;
   }
 
-  if (!ready) {
+  if (!ready && !(isResuming && onboarded)) {
     return (
       <Onboarding
         onComplete={(name: string) => {
@@ -79,6 +73,19 @@ export default function DashboardApp() {
         <ActivityView />
       </main>
       <Overlays />
+      <DashboardScriptsMount />
     </div>
   );
+}
+
+/** Re-runs the imperative dashboard wiring every time the dashboard DOM mounts. */
+function DashboardScriptsMount() {
+  useEffect(() => {
+    try {
+      initDashboardScripts();
+    } catch (err) {
+      console.error("[balcore] initDashboardScripts failed:", err);
+    }
+  }, []);
+  return null;
 }
