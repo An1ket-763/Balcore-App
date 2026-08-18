@@ -9,10 +9,53 @@
 import { getTokenPrices } from "./data/prices";
 import { getTokenBalances } from "./data/balances";
 
-let started = false;
+let initedRoot: Element | null = null;
+let teardown: Array<() => void> = [];
+
+/**
+ * Re-runnable entry point. The dashboard DOM is unmounted/remounted by React
+ * (disconnect → reconnect, network switches), which drops every listener that
+ * was bound to the old nodes. We therefore re-run the wiring whenever a fresh
+ * dashboard root appears, and first undo the previous run's global listeners
+ * and timers so nothing accumulates.
+ */
 export function initDashboardScripts() {
-  if (started) return;
-  started = true;
+  const root = document.querySelector(".app");
+  if (root && root === initedRoot) return;
+  initedRoot = root;
+
+  teardown.forEach((fn) => { try { fn(); } catch {} });
+  teardown = [];
+
+  const winAdd = window.addEventListener.bind(window);
+  const docAdd = document.addEventListener.bind(document);
+  const winInterval = window.setInterval.bind(window);
+
+  window.addEventListener = function (type: any, fn: any, opts?: any) {
+    winAdd(type, fn, opts);
+    teardown.push(() => window.removeEventListener(type, fn, opts));
+  } as typeof window.addEventListener;
+  document.addEventListener = function (type: any, fn: any, opts?: any) {
+    docAdd(type, fn, opts);
+    teardown.push(() => document.removeEventListener(type, fn, opts));
+  } as typeof document.addEventListener;
+  window.setInterval = function (fn: any, ms?: any, ...args: any[]) {
+    const id = winInterval(fn, ms, ...args);
+    teardown.push(() => clearInterval(id));
+    return id;
+  } as typeof window.setInterval;
+
+  try {
+    runDashboardScripts();
+  } finally {
+    window.addEventListener = winAdd as typeof window.addEventListener;
+    document.addEventListener = docAdd as typeof document.addEventListener;
+    window.setInterval = winInterval as typeof window.setInterval;
+  }
+}
+
+function runDashboardScripts() {
+
 
 // count-up utility (respects reduced-motion) — reusable, exposed for view-triggered animations
 window.__countUp = function(el){
