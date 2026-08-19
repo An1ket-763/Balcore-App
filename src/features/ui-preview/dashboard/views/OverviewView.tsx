@@ -1,4 +1,14 @@
+import { useTokenBalances } from "../data/balances";
+import { getTokenPrices } from "../data/prices";
+
 export default function OverviewView() {
+  const { balances, isLoading: balancesLoading } = useTokenBalances();
+  const prices = getTokenPrices();
+  const walletTotal = (Object.keys(balances) as (keyof typeof balances)[]).reduce(
+    (sum, sym) => sum + balances[sym] * (prices[sym]?.usd ?? 0),
+    0,
+  );
+
   return (
     <>
     <div className="grid view" id="viewOverview">
