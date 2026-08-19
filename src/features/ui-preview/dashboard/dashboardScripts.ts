@@ -624,7 +624,8 @@ window.__countUp = function(el){
       return n.toFixed(6);
     }
     function renderTok(btn, sym){ btn.innerHTML = TOKENS[sym].coin + sym + chev; btn.setAttribute('aria-haspopup','listbox'); btn.setAttribute('aria-expanded','false'); }
-    function renderBal(el, sym){ el.textContent = fmtBal(TOKENS[sym].bal) + ' ' + sym; }
+    function liveBal(sym){ const b = getTokenBalances(); return typeof b[sym] === 'number' ? b[sym] : TOKENS[sym].bal; }
+    function renderBal(el, sym){ el.textContent = fmtBal(liveBal(sym)) + ' ' + sym; }
     function renderTokens(){ renderTok(fromTok, fromSym); renderTok(toTok, toSym); renderBal(fromBal, fromSym); renderBal(toBal, toSym); }
 
     function midRate(){ return TOKENS[fromSym].usd / TOKENS[toSym].usd; }
@@ -742,7 +743,7 @@ window.__countUp = function(el){
     // max
     var pctBtns = document.querySelectorAll('#swapPct .swap-pct-btn');
     pctBtns.forEach(function(btn){ btn.addEventListener('click', function(){
-      var pct = parseFloat(btn.dataset.pct), amt = +(TOKENS[fromSym].bal * pct/100).toFixed(8);
+      var pct = parseFloat(btn.dataset.pct), amt = +(liveBal(fromSym) * pct/100).toFixed(8);
       from.value = String(amt); fmtMoney(from,8);
       pctBtns.forEach(function(x){ x.classList.remove('on'); }); btn.classList.add('on');
       refresh(); from.focus();
