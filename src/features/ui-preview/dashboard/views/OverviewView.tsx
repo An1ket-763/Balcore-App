@@ -1,8 +1,15 @@
 import { useTokenBalances } from "../data/balances";
 import { getTokenPrices } from "../data/prices";
+import { useActivity } from "../data/activity";
 
 export default function OverviewView() {
   const { balances, isLoading: balancesLoading } = useTokenBalances();
+  const {
+    items: activityItems,
+    isLoading: activityLoading,
+    isError: activityError,
+    isConnected: activityConnected,
+  } = useActivity();
   const prices = getTokenPrices();
   const walletTotal = (Object.keys(balances) as (keyof typeof balances)[]).reduce(
     (sum, sym) => sum + balances[sym] * (prices[sym]?.usd ?? 0),
@@ -243,26 +250,23 @@ export default function OverviewView() {
             <div className="card-label">Recent activity</div>
             <a href="#" data-view="activity" style={{fontSize: "12.5px", fontWeight: "500", color: "var(--violet)"}}>View all →</a>
           </div>
-          <div className="act-row">
-            <span className="act-ic mint">↑</span>
-            <div className="act-body"><div className="act-t">Fees harvested</div><div className="act-s">BTC / Dollar · 2h ago</div></div>
-            <div className="act-v mint">+$1,240</div>
-          </div>
-          <div className="act-row">
-            <span className="act-ic violet">⟳</span>
-            <div className="act-body"><div className="act-t">Gold / Dollar rebalanced</div><div className="act-s">Range re-armed · 6h ago</div></div>
-            <div className="act-v"></div>
-          </div>
-          <div className="act-row">
-            <span className="act-ic mint">✓</span>
-            <div className="act-body"><div className="act-t">Weekly settlement</div><div className="act-s">Auto-compounded · Tue</div></div>
-            <div className="act-v mint">+$18,420</div>
-          </div>
-          <div className="act-row">
-            <span className="act-ic neutral">↓</span>
-            <div className="act-body"><div className="act-t">Deposit</div><div className="act-s">Added to pools · Jul 3</div></div>
-            <div className="act-v">$50,000</div>
-          </div>
+          {!activityConnected ? (
+            <div className="act-empty">Connect your wallet to see your activity.</div>
+          ) : activityLoading ? (
+            <div className="act-empty" style={{opacity: 0.5}}>Loading activity…</div>
+          ) : activityError ? (
+            <div className="act-empty">Couldn’t load on-chain activity right now.</div>
+          ) : activityItems.length === 0 ? (
+            <div className="act-empty">No activity yet.</div>
+          ) : (
+            activityItems.slice(0, 4).map((i, idx) => (
+              <div className="act-row" key={idx}>
+                <span className={"act-ic " + i.iconTone}>{i.icon}</span>
+                <div className="act-body"><div className="act-t">{i.title}</div><div className="act-s">{i.subtitle} · {i.time}</div></div>
+                <div className={"act-v" + (i.valueTone ? " " + i.valueTone : "")}>{i.value}</div>
+              </div>
+            ))
+          )}
         </div>
 
       </div>
