@@ -1,8 +1,15 @@
 import { useTokenBalances } from "../data/balances";
 import { getTokenPrices } from "../data/prices";
+import { useActivity } from "../data/activity";
 
 export default function OverviewView() {
   const { balances, isLoading: balancesLoading } = useTokenBalances();
+  const {
+    items: activityItems,
+    isLoading: activityLoading,
+    isError: activityError,
+    isConnected: activityConnected,
+  } = useActivity();
   const prices = getTokenPrices();
   const walletTotal = (Object.keys(balances) as (keyof typeof balances)[]).reduce(
     (sum, sym) => sum + balances[sym] * (prices[sym]?.usd ?? 0),
