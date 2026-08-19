@@ -1,9 +1,9 @@
 import { Fragment } from "react";
 import { LOGO } from "../logo";
-import { getActivity } from "../data/activity";
+import { useActivity } from "../data/activity";
 
 export default function ActivityView() {
-  const items = getActivity();
+  const { items, isLoading, isError, isConnected } = useActivity();
   const days: string[] = [];
   items.forEach((i) => { if (!days.includes(i.day)) days.push(i.day); });
   return (
