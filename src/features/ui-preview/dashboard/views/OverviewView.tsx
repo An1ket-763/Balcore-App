@@ -100,7 +100,13 @@ export default function OverviewView() {
                 <span className="wh-mini-link">Details →</span>
               </div>
               <div className="wh-mini-main">
-                <span className="pf-df-v" id="whMiniTotal">$58,150</span>
+                <span className="pf-df-v" id="whMiniTotal">
+                  {balancesLoading ? (
+                    <span style={{ opacity: 0.5 }}>Loading balance…</span>
+                  ) : (
+                    `$${walletTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}`
+                  )}
+                </span>
                 <span className="wh-mini-coins"><span className="coin c-btc">₿</span><span className="coin c-gold">Au</span><span className="coin c-usd">$</span><span className="coin c-tsla">T</span></span>
               </div>
               <div className="wh-mini-sub">4 assets · not deposited yet</div>
