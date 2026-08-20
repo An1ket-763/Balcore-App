@@ -1,5 +1,25 @@
 import { LOGO } from "../logo";
+import { useTokenBalances } from "../data/balances";
+import { getTokenPrices, type TokenSymbol } from "../data/prices";
+
+const WALLET_ROWS: { sym: TokenSymbol; coinClass: string; glyph: string; unit: string; pool: string }[] = [
+  { sym: "BTC", coinClass: "c-btc", glyph: "₿", unit: "BTC", pool: "btc" },
+  { sym: "GOLD", coinClass: "c-gold", glyph: "Au", unit: "XAUt", pool: "gold" },
+  { sym: "USDC", coinClass: "c-usd", glyph: "$", unit: "USDC", pool: "usdc" },
+  { sym: "AVAX", coinClass: "c-avax", glyph: "A", unit: "AVAX", pool: "usdc" },
+  { sym: "TSLA", coinClass: "c-tsla", glyph: "T", unit: "TSLA", pool: "tsla" },
+];
+
+function fmtUsd(n: number) {
+  return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+function fmtAmt(n: number) {
+  return n >= 1000 ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : n.toLocaleString("en-US", { maximumFractionDigits: 4 });
+}
+
 export default function Overlays() {
+  const { balances, isLoading: balancesLoading } = useTokenBalances();
+  const prices = getTokenPrices();
   return (
     <>
 <div className="overlay" id="ovShare" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
@@ -122,14 +142,30 @@ export default function Overlays() {
     </div>
     <p className="m-sub">Held in your wallet — not deposited, not earning yet.</p>
     <div className="split" style={{margin: "6px 0 16px"}}>
-      <div><div className="k">In your wallet</div><div className="v mono">$58,150</div></div>
+      <div><div className="k">In your wallet</div><div className="v mono">{balancesLoading ? <span style={{opacity: 0.5}}>Loading…</span> : fmtUsd((Object.keys(balances) as TokenSymbol[]).reduce((s, k) => s + balances[k] * (prices[k]?.usd ?? 0), 0))}</div></div>
       <div style={{textAlign: "right"}}><div className="k">Working in Balcore</div><div className="v mono mint">$2,418,930</div></div>
     </div>
     <div className="wl-list">
-      <div className="wl-row"><span className="coin c-btc">₿</span><div className="wl-body"><div className="wl-top"><span className="wl-name">Bitcoin</span><span className="wl-val mono">$21,490</span></div><div className="wl-sub"><span className="mono">0.34 BTC</span><span>@ $63,200</span></div></div><button className="wl-dep" data-pool="btc" type="button">Deposit</button></div>
-      <div className="wl-row"><span className="coin c-gold">Au</span><div className="wl-body"><div className="wl-top"><span className="wl-name">Gold</span><span className="wl-val mono">$16,430</span></div><div className="wl-sub"><span className="mono">6.20 XAUt</span><span>@ $2,650</span></div></div><button className="wl-dep" data-pool="gold" type="button">Deposit</button></div>
-      <div className="wl-row"><span className="coin c-usd">$</span><div className="wl-body"><div className="wl-top"><span className="wl-name">USD Coin</span><span className="wl-val mono">$12,400</span></div><div className="wl-sub"><span className="mono">12,400 USDC</span><span>stablecoin</span></div></div><button className="wl-dep" data-pool="usdc" type="button">Deposit</button></div>
-      <div className="wl-row"><span className="coin c-tsla">T</span><div className="wl-body"><div className="wl-top"><span className="wl-name">Tesla</span><span className="wl-val mono">$7,830</span></div><div className="wl-sub"><span className="mono">38 TSLA</span><span>@ $206</span></div></div><button className="wl-dep" data-pool="tsla" type="button">Deposit</button></div>
+      {WALLET_ROWS.map((r) => (
+        <div className="wl-row" key={r.sym}>
+          <span className={"coin " + r.coinClass}>{r.glyph}</span>
+          <div className="wl-body">
+            <div className="wl-top">
+              <span className="wl-name">{prices[r.sym].name}</span>
+              <span className="wl-val mono">
+                {balancesLoading ? <span style={{opacity: 0.5}}>Loading…</span> : fmtUsd(balances[r.sym] * prices[r.sym].usd)}
+              </span>
+            </div>
+            <div className="wl-sub">
+              <span className="mono">
+                {balancesLoading ? <span style={{opacity: 0.5}}>Loading…</span> : `${fmtAmt(balances[r.sym])} ${r.unit}`}
+              </span>
+              <span>{r.sym === "USDC" ? "stablecoin" : `@ ${fmtUsd(prices[r.sym].usd)}`}</span>
+            </div>
+          </div>
+          <button className="wl-dep" data-pool={r.pool} type="button">Deposit</button>
+        </div>
+      ))}
     </div>
     <p className="m-foot">Deposit any asset to start market-making. Non-custodial — your keys, your control.</p>
   </div>

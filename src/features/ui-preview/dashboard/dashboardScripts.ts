@@ -625,7 +625,11 @@ window.__countUp = function(el){
     }
     function renderTok(btn, sym){ btn.innerHTML = TOKENS[sym].coin + sym + chev; btn.setAttribute('aria-haspopup','listbox'); btn.setAttribute('aria-expanded','false'); }
     function liveBal(sym){ const b = getTokenBalances(); return typeof b[sym] === 'number' ? b[sym] : TOKENS[sym].bal; }
-    function renderBal(el, sym){ el.textContent = fmtBal(liveBal(sym)) + ' ' + sym; }
+    function liveUsd(sym){ return liveBal(sym) * (PRICES[sym] ? PRICES[sym].usd : 0); }
+    function renderBal(el, sym){
+      el.textContent = fmtBal(liveBal(sym)) + ' ' + sym
+        + ' ($' + liveUsd(sym).toLocaleString('en-US',{maximumFractionDigits:2}) + ')';
+    }
     function renderTokens(){ renderTok(fromTok, fromSym); renderTok(toTok, toSym); renderBal(fromBal, fromSym); renderBal(toBal, toSym); }
 
     function midRate(){ return TOKENS[fromSym].usd / TOKENS[toSym].usd; }
@@ -734,7 +738,7 @@ window.__countUp = function(el){
       }, 115);
     }
     const ovSwapEl = document.getElementById('ovSwap');
-    if (ovSwapEl) new MutationObserver(function(){ if (ovSwapEl.classList.contains('open')) runScan(); }).observe(ovSwapEl,{attributes:true,attributeFilter:['class']});
+    if (ovSwapEl) new MutationObserver(function(){ if (ovSwapEl.classList.contains('open')) { renderBal(fromBal, fromSym); renderBal(toBal, toSym); runScan(); } }).observe(ovSwapEl,{attributes:true,attributeFilter:['class']});
 
     // manual route selection
     routeOpts.forEach(function(opt){ opt.addEventListener('click', function(){ routeOpts.forEach(function(o){o.classList.remove('on');}); opt.classList.add('on'); refresh(); }); });
