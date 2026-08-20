@@ -142,7 +142,7 @@ export default function Overlays() {
     </div>
     <p className="m-sub">Held in your wallet — not deposited, not earning yet.</p>
     <div className="split" style={{margin: "6px 0 16px"}}>
-      <div><div className="k">In your wallet</div><div className="v mono">$58,150</div></div>
+      <div><div className="k">In your wallet</div><div className="v mono">{balancesLoading ? <span style={{opacity: 0.5}}>Loading…</span> : fmtUsd((Object.keys(balances) as TokenSymbol[]).reduce((s, k) => s + balances[k] * (prices[k]?.usd ?? 0), 0))}</div></div>
       <div style={{textAlign: "right"}}><div className="k">Working in Balcore</div><div className="v mono mint">$2,418,930</div></div>
     </div>
     <div className="wl-list">
