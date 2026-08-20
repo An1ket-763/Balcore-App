@@ -1,5 +1,25 @@
 import { LOGO } from "../logo";
+import { useTokenBalances } from "../data/balances";
+import { getTokenPrices, type TokenSymbol } from "../data/prices";
+
+const WALLET_ROWS: { sym: TokenSymbol; coinClass: string; glyph: string; unit: string; pool: string }[] = [
+  { sym: "BTC", coinClass: "c-btc", glyph: "₿", unit: "BTC", pool: "btc" },
+  { sym: "GOLD", coinClass: "c-gold", glyph: "Au", unit: "XAUt", pool: "gold" },
+  { sym: "USDC", coinClass: "c-usd", glyph: "$", unit: "USDC", pool: "usdc" },
+  { sym: "AVAX", coinClass: "c-avax", glyph: "A", unit: "AVAX", pool: "usdc" },
+  { sym: "TSLA", coinClass: "c-tsla", glyph: "T", unit: "TSLA", pool: "tsla" },
+];
+
+function fmtUsd(n: number) {
+  return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+function fmtAmt(n: number) {
+  return n >= 1000 ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : n.toLocaleString("en-US", { maximumFractionDigits: 4 });
+}
+
 export default function Overlays() {
+  const { balances, isLoading: balancesLoading } = useTokenBalances();
+  const prices = getTokenPrices();
   return (
     <>
 <div className="overlay" id="ovShare" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
