@@ -738,7 +738,7 @@ window.__countUp = function(el){
       }, 115);
     }
     const ovSwapEl = document.getElementById('ovSwap');
-    if (ovSwapEl) new MutationObserver(function(){ if (ovSwapEl.classList.contains('open')) runScan(); }).observe(ovSwapEl,{attributes:true,attributeFilter:['class']});
+    if (ovSwapEl) new MutationObserver(function(){ if (ovSwapEl.classList.contains('open')) { renderBal(fromBal, fromSym); renderBal(toBal, toSym); runScan(); } }).observe(ovSwapEl,{attributes:true,attributeFilter:['class']});
 
     // manual route selection
     routeOpts.forEach(function(opt){ opt.addEventListener('click', function(){ routeOpts.forEach(function(o){o.classList.remove('on');}); opt.classList.add('on'); refresh(); }); });
