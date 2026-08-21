@@ -829,7 +829,9 @@ window.__countUp = function(el){
   // deposit logic — stateful CTA + equal split
   const dAmt = document.getElementById('depAmt'), dCta = document.getElementById('depCta');
   const dBtc = document.getElementById('depBtc'), dUsd = document.getElementById('depUsd');
-  let BTC_PRICE = 63200; const D_MAX = 48900; let CUR_SYM = "BTC", CUR_DEC = 6;
+  let BTC_PRICE = 63200; let CUR_SYM = "BTC", CUR_DEC = 6;
+  // live wallet balance (USDC on Fuji) — read fresh on every validation pass
+  const usdcBal = () => { const b = getTokenBalances(); return typeof b.USDC === 'number' ? b.USDC : 0; };
   // format an amount input with thous-separator commas as the user types (cursor-preserving)
   function fmtMoney(el, maxDec){
     if(!el) return;
@@ -855,12 +857,12 @@ window.__countUp = function(el){
     if (v <= 0){ dCta.disabled = true; dCta.textContent = 'Enter an amount'; dBtc.textContent = dUsd.textContent = '—'; return; }
     dBtc.textContent = (v/2/BTC_PRICE).toFixed(CUR_DEC) + ' ' + CUR_SYM;
     dUsd.textContent = fmt(v/2) + ' USDC';
-    if (v > D_MAX){ dCta.disabled = true; dCta.textContent = 'Amount exceeds wallet balance'; return; }
+    if (v > usdcBal()){ dCta.disabled = true; dCta.textContent = 'Amount exceeds wallet balance'; return; }
     dCta.disabled = false; dCta.textContent = 'Deposit ' + fmt(v);
   }
   dAmt.addEventListener('input', dUpdate);
   document.querySelectorAll('#depQuick button').forEach(b=>b.addEventListener('click',()=>{
-    dAmt.value = b.dataset.v; dUpdate();
+    dAmt.value = b.dataset.live === 'usdc' ? String(Math.floor(usdcBal()*100)/100) : b.dataset.v; dUpdate();
     document.querySelectorAll('#depQuick button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
   }));
   const ack = document.getElementById('depAck');
@@ -906,7 +908,7 @@ window.__countUp = function(el){
   addEventListener('keydown',(e)=>{ if(e.key==='Escape' && ack && !ack.hidden) ack.hidden=true; });
 
   // ---- deposit mode: convert-USDC vs provide-both ----
-  let BTC_BAL = 0.77; const USDC_BAL = 48900;
+  let BTC_BAL = 0.77;
   const autoMode = document.getElementById('depAutoMode');
   const bothMode = document.getElementById('depBothMode');
   const btcIn = document.getElementById('depBtcIn');
@@ -945,7 +947,7 @@ window.__countUp = function(el){
     const total = btc * BTC_PRICE + usdc;
     bothTotal.textContent = total ? fmt(total) : '$0.00';
     if (total <= 0){ dCta.disabled = true; dCta.textContent = 'Enter an amount'; return; }
-    if (btc > BTC_BAL + 1e-9 || usdc > USDC_BAL + 1e-6){ dCta.disabled = true; dCta.textContent = 'Exceeds wallet balance'; return; }
+    if (btc > BTC_BAL + 1e-9 || usdc > usdcBal() + 1e-6){ dCta.disabled = true; dCta.textContent = 'Exceeds wallet balance'; return; }
     dCta.disabled = false; dCta.textContent = 'Deposit ' + fmt(total);
   }
   if (btcIn){
@@ -953,7 +955,7 @@ window.__countUp = function(el){
     usdcIn.addEventListener('input', ()=> bothCalc('usdc'));
     document.querySelectorAll('#depBothMode .mini-max').forEach(b=> b.addEventListener('click', ()=>{
       if (b.dataset.max === 'btc'){ btcIn.value = String(BTC_BAL); bothCalc('btc'); }
-      else { usdcIn.value = String(USDC_BAL); bothCalc('usdc'); }
+      else { usdcIn.value = String(Math.floor(usdcBal()*100)/100); bothCalc('usdc'); }
     }));
   }
   document.querySelectorAll('#depMode button').forEach(btn=> btn.addEventListener('click', ()=>{
