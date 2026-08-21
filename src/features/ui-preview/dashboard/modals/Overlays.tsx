@@ -497,7 +497,7 @@ export default function Overlays() {
       </div>
       <div className="both-link"><span className="both-link-line"></span><span className="both-link-badge">matched to pool ratio</span><span className="both-link-line"></span></div>
       <div className="amt-box">
-        <div className="amt-top"><span>Dollars</span><span>Wallet: <span className="mono" style={{color: "var(--text-2)"}}>48,900 USDC</span> <button className="mini-max" data-max="usdc" type="button">Max</button></span></div>
+        <div className="amt-top"><span>Dollars</span><span>Wallet: <span className="mono" style={balancesLoading ? {color: "var(--text-2)", opacity: 0.5} : {color: "var(--text-2)"}} id="depBothUsdcBal">{balancesLoading ? "Loading…" : `${fmtAmt(balances.USDC)} USDC`}</span> <button className="mini-max" data-max="usdc" type="button">Max</button></span></div>
         <div className="amt-row"><span className="coin c-usd dep-coin">$</span><input id="depUsdcIn" inputMode="decimal" placeholder="0.00" aria-label="USDC amount" /><span className="unit">USDC</span></div>
       </div>
       <div className="both-total"><span>Total value</span><span className="v mono" id="depBothTotal">$0.00</span></div>
