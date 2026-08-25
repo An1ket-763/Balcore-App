@@ -3,7 +3,15 @@ import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
 import WalletMenu from "./WalletMenu";
 import WrongNetworkBanner from "./WrongNetworkBanner";
-export default function Topnav({ onConnectClick }: { onConnectClick: () => void }) {
+export default function Topnav({
+  onConnectClick,
+  onMenuToggle,
+  menuOpen = false,
+}: {
+  onConnectClick: () => void;
+  onMenuToggle?: () => void;
+  menuOpen?: boolean;
+}) {
   const { isConnected, chain } = useAccount();
   const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
 
