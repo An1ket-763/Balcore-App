@@ -22,7 +22,7 @@ export default function ActivityView() {
           {!isConnected ? (
             <div className="act-empty">Connect your wallet to see your activity.</div>
           ) : isLoading ? (
-            <div className="act-empty" style={{opacity: 0.5}}>Loading activity…</div>
+            <div className="act-empty is-loading">Loading activity…</div>
           ) : isError ? (
             <div className="act-empty">Couldn’t load on-chain activity right now.</div>
           ) : items.length === 0 ? (

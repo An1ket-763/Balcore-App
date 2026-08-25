@@ -1,7 +1,7 @@
 import { useAccount } from "wagmi";
 import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
-export default function Sidebar({ displayName = "" }) {
+export default function Sidebar({ displayName = "", open = false, onClose = () => {} }) {
   // displayName is kept for API compatibility but no longer rendered here.
   const { isConnected, chain } = useAccount();
   const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
@@ -12,13 +12,14 @@ export default function Sidebar({ displayName = "" }) {
 
   return (
     <>
-  <aside className="side">
+  <aside className={`side${open ? " open" : ""}`} id="sideNav" aria-label="Main navigation">
+    <button className="side-close" type="button" aria-label="Close navigation menu" onClick={onClose}>✕</button>
     <a className="logo" href="#">
       <img src={LOGO} width="26" height="26" alt="" style={{display: "block"}} />
       Balcore
     </a>
 
-    <div className="nav-group">
+    <div className="nav-group" onClick={onClose}>
       <div className="lbl">Menu</div>
       <a className="nav-item active" href="#" data-view="overview">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2" y="2" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="9.5" y="2" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="2" y="9.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" /></svg>

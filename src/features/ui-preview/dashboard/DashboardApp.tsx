@@ -18,6 +18,7 @@ export default function DashboardApp() {
   const { isConnected, address, status } = useAccount();
   const [onboarded, setOnboarded] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isResuming = status === "connecting" || status === "reconnecting";
 
@@ -38,6 +39,17 @@ export default function DashboardApp() {
     if (isResuming) return;
     if (!isConnected && onboarded) setOnboarded(false);
   }, [isConnected, onboarded, isResuming]);
+
+  // Escape closes the mobile navigation drawer.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
 
   // Keep the dashboard mounted while the wallet resumes/switches network,
   // otherwise the imperative script listeners are lost on remount.
@@ -65,9 +77,18 @@ export default function DashboardApp() {
 
   return (
     <div className="app">
-      <Sidebar displayName={displayName} />
+      <Sidebar displayName={displayName} open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <div
+        className={`side-scrim${menuOpen ? " open" : ""}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
       <main className="main">
-        <Topnav onConnectClick={() => { }} />
+        <Topnav
+          onConnectClick={() => { }}
+          menuOpen={menuOpen}
+          onMenuToggle={() => setMenuOpen((v) => !v)}
+        />
         <OverviewView />
         <ProtocolView />
         <ActivityView />
