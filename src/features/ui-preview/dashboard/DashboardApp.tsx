@@ -65,9 +65,18 @@ export default function DashboardApp() {
 
   return (
     <div className="app">
-      <Sidebar displayName={displayName} />
+      <Sidebar displayName={displayName} open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <div
+        className={`side-scrim${menuOpen ? " open" : ""}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
       <main className="main">
-        <Topnav onConnectClick={() => { }} />
+        <Topnav
+          onConnectClick={() => { }}
+          menuOpen={menuOpen}
+          onMenuToggle={() => setMenuOpen((v) => !v)}
+        />
         <OverviewView />
         <ProtocolView />
         <ActivityView />
