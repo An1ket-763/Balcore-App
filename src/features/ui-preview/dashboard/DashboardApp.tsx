@@ -18,6 +18,7 @@ export default function DashboardApp() {
   const { isConnected, address, status } = useAccount();
   const [onboarded, setOnboarded] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isResuming = status === "connecting" || status === "reconnecting";
 
