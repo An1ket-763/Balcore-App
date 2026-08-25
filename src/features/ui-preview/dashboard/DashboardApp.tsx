@@ -40,6 +40,17 @@ export default function DashboardApp() {
     if (!isConnected && onboarded) setOnboarded(false);
   }, [isConnected, onboarded, isResuming]);
 
+  // Escape closes the mobile navigation drawer.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
+
   // Keep the dashboard mounted while the wallet resumes/switches network,
   // otherwise the imperative script listeners are lost on remount.
   if (isResuming && !onboarded) {
