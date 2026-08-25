@@ -1,7 +1,7 @@
 import { useAccount } from "wagmi";
 import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
-export default function Sidebar({ displayName = "" }) {
+export default function Sidebar({ displayName = "", open = false, onClose = () => {} }) {
   // displayName is kept for API compatibility but no longer rendered here.
   const { isConnected, chain } = useAccount();
   const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
