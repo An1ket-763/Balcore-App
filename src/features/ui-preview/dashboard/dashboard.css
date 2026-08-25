@@ -1273,3 +1273,99 @@ html[data-theme="light"] .card{box-shadow:0 1px 2px rgba(23,22,48,.06),0 12px 30
 @media (prefers-reduced-motion:reduce){
   .cta:active,.swap-btn:active,.lead-cta:active,.br-chip:active,.swap-pct-btn:active,.br-speed-opt:active{transform:none}
 }
+/* ===== a11y: readable loading text (WCAG AA) ===== */
+.is-loading{color:var(--text-2);opacity:1}
+
+/* ===== mobile drawer sidebar (replaces the bottom tab bar) ===== */
+.nav-toggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;flex-shrink:0;border-radius:10px;border:1px solid var(--line-soft);background:var(--panel);color:var(--text-2)}
+.nav-toggle:hover{border-color:var(--violet);color:var(--text)}
+.side-scrim{display:none;position:fixed;inset:0;z-index:65;background:var(--scrim);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.side-close{display:none}
+
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .nav-toggle{display:inline-flex}
+  .side-scrim.open{display:block}
+  /* drawer overlays the content instead of squeezing it */
+  .side{
+    position:fixed;top:0;left:0;bottom:auto;right:auto;
+    width:min(268px,84vw);height:100dvh;max-height:100dvh;
+    flex-direction:column;align-items:stretch;gap:22px;
+    padding:18px 14px calc(18px + env(safe-area-inset-bottom,0px));
+    border-right:1px solid var(--line);border-top:none;
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    overflow-y:auto;z-index:70;
+    transform:translateX(-102%);transition:transform .22s var(--ease);
+    box-shadow:0 24px 60px var(--sh-60)
+  }
+  .side.open{transform:none}
+  .side>.logo{display:flex}
+  .side .side-card{display:block}
+  .side .nav-group{flex:0 0 auto;display:block;margin:0}
+  .side .nav-group .lbl{display:block}
+  .side-close{display:inline-grid;place-items:center;position:absolute;top:14px;right:12px;width:34px;height:34px;border-radius:10px;border:1px solid var(--line-soft);background:none;color:var(--text-2)}
+  .nav-item{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:11px;padding:11px 10px;font-size:14.5px;font-weight:500;color:var(--text-2);border-radius:10px;min-height:44px}
+  .nav-item svg{width:17px;height:17px}
+  .main{padding:14px 14px 28px}
+  @media (prefers-reduced-motion:reduce){.side{transition:none}}
+}
+
+/* ===== wallet dropdown must stay inside narrow viewports ===== */
+@media (max-width:560px){
+  .wallet-wrap{position:static}
+  .wallet-menu{left:10px;right:10px;width:auto;max-width:none;top:auto;max-height:70dvh;overflow-y:auto}
+  .wallet-menu-item{min-height:44px}
+}
+
+/* ===== modals become bottom sheets on phones ===== */
+@media (max-width:600px){
+  .overlay{align-items:flex-end;padding:0}
+  .modal{
+    max-width:none;width:100%;border-radius:20px 20px 0 0;
+    max-height:92dvh;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));
+    animation:sheet-up .22s ease
+  }
+  .m-head{position:sticky;top:0;z-index:2;padding-top:4px;background:var(--panel);margin-inline:-16px;padding-inline:16px}
+  .m-close{width:40px;height:40px}
+  .cta{padding:15px 0;font-size:15.5px}
+  @keyframes sheet-up{from{opacity:.6;transform:translateY(28px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.modal{animation:none}}
+}
+
+/* ===== donut + legend stack cleanly, legend never truncates ===== */
+@media (max-width:820px){
+  .donut-wrap{flex-direction:column;gap:14px}
+  .legend{width:100%}
+  .legend .row .name{white-space:normal;min-width:0}
+  .legend .row b{margin-left:10px;flex-shrink:0}
+}
+
+/* ===== timeframe tabs scroll instead of breaking ===== */
+.pf-tf{flex-wrap:wrap}
+@media (max-width:560px){
+  .pf-tf{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .pf-tf::-webkit-scrollbar{display:none}
+  .pf-tf button{flex:0 0 auto;min-height:36px}
+  .act-filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .act-filters::-webkit-scrollbar{display:none}
+  .act-filters button{flex:0 0 auto;min-height:40px}
+}
+
+/* ===== compact activity rows on very narrow screens ===== */
+@media (max-width:480px){
+  .act-item{align-items:flex-start;gap:10px;padding:11px 0}
+  .act-item .act-t{font-size:13.5px;white-space:normal}
+  .act-item .act-s{font-size:11px;word-break:break-word}
+  .act-meta{text-align:right;min-width:0}
+  .act-meta .act-v{font-size:13px}
+  .act-row{gap:9px}
+  .act-row .act-t{white-space:normal}
+  .act-v{white-space:nowrap}
+}
+
+/* ===== tap targets ===== */
+@media (max-width:820px){
+  .theme-btn,.swap-btn,.wallet{min-height:44px}
+  .quick button,.mini-max{min-height:40px}
+}
