@@ -66,7 +66,7 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
           {address && (
             <div className="wm-balance">
               {balanceLoading ? (
-                <span style={{ opacity: 0.5 }}>Loading balance…</span>
+                <span className="is-loading">Loading balance…</span>
               ) : (
                 <>{Number(balance?.formatted ?? 0).toFixed(4)} AVAX</>
               )}

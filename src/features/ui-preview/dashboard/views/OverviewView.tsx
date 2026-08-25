@@ -109,7 +109,7 @@ export default function OverviewView() {
               <div className="wh-mini-main">
                 <span className="pf-df-v" id="whMiniTotal">
                   {balancesLoading ? (
-                    <span style={{ opacity: 0.5 }}>Loading balance…</span>
+                    <span className="is-loading">Loading balance…</span>
                   ) : (
                     `$${walletTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}`
                   )}
@@ -253,7 +253,7 @@ export default function OverviewView() {
           {!activityConnected ? (
             <div className="act-empty">Connect your wallet to see your activity.</div>
           ) : activityLoading ? (
-            <div className="act-empty" style={{opacity: 0.5}}>Loading activity…</div>
+            <div className="act-empty is-loading">Loading activity…</div>
           ) : activityError ? (
             <div className="act-empty">Couldn’t load on-chain activity right now.</div>
           ) : activityItems.length === 0 ? (

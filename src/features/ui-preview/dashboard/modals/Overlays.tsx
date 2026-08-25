@@ -142,7 +142,7 @@ export default function Overlays() {
     </div>
     <p className="m-sub">Held in your wallet — not deposited, not earning yet.</p>
     <div className="split" style={{margin: "6px 0 16px"}}>
-      <div><div className="k">In your wallet</div><div className="v mono">{balancesLoading ? <span style={{opacity: 0.5}}>Loading…</span> : fmtUsd((Object.keys(balances) as TokenSymbol[]).reduce((s, k) => s + balances[k] * (prices[k]?.usd ?? 0), 0))}</div></div>
+      <div><div className="k">In your wallet</div><div className="v mono">{balancesLoading ? <span className="is-loading">Loading…</span> : fmtUsd((Object.keys(balances) as TokenSymbol[]).reduce((s, k) => s + balances[k] * (prices[k]?.usd ?? 0), 0))}</div></div>
       <div style={{textAlign: "right"}}><div className="k">Working in Balcore</div><div className="v mono mint">$2,418,930</div></div>
     </div>
     <div className="wl-list">
@@ -153,12 +153,12 @@ export default function Overlays() {
             <div className="wl-top">
               <span className="wl-name">{prices[r.sym].name}</span>
               <span className="wl-val mono">
-                {balancesLoading ? <span style={{opacity: 0.5}}>Loading…</span> : fmtUsd(balances[r.sym] * prices[r.sym].usd)}
+                {balancesLoading ? <span className="is-loading">Loading…</span> : fmtUsd(balances[r.sym] * prices[r.sym].usd)}
               </span>
             </div>
             <div className="wl-sub">
               <span className="mono">
-                {balancesLoading ? <span style={{opacity: 0.5}}>Loading…</span> : `${fmtAmt(balances[r.sym])} ${r.unit}`}
+                {balancesLoading ? <span className="is-loading">Loading…</span> : `${fmtAmt(balances[r.sym])} ${r.unit}`}
               </span>
               <span>{r.sym === "USDC" ? "stablecoin" : `@ ${fmtUsd(prices[r.sym].usd)}`}</span>
             </div>
@@ -234,7 +234,7 @@ export default function Overlays() {
       <span>Balcore checks the top Avalanche DEXs and routes your swap through whichever gives the best price. Non-custodial.</span>
     </div>
 
-    <button className="cta" id="swapCta" disabled={true}>Enter an amount</button>
+    <button className="cta" id="swapCta" aria-live="polite" disabled={true}>Enter an amount</button>
     <div className="br-done" id="swapDone" hidden={true}>
       <div className="bd-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
       <h3>Swap complete</h3>
@@ -336,7 +336,7 @@ export default function Overlays() {
     <div className="br-pipe" aria-hidden="true"><span className="bp">Burn</span><span className="bp-arrow">→</span><span className="bp">Attest</span><span className="bp-arrow">→</span><span className="bp">Mint</span></div>
 
     <div className="br-review" id="brReviewNote" hidden={true}></div>
-    <button className="cta" id="brCta" disabled={true}>Enter an amount</button>
+    <button className="cta" id="brCta" aria-live="polite" disabled={true}>Enter an amount</button>
     <div className="br-progress" id="brProgress" hidden={true} aria-live="polite">
       <div id="brSteps"></div>
       <div className="br-done" id="brDone" hidden={true}>
@@ -474,7 +474,7 @@ export default function Overlays() {
     
     <div id="depAutoMode">
       <div className="amt-box">
-        <div className="amt-top"><span>Amount</span><span>Wallet: <span className="mono" style={balancesLoading ? {color: "var(--text-2)", opacity: 0.5} : {color: "var(--text-2)"}} id="depUsdcWalletBal">{balancesLoading ? "Loading…" : `${fmtAmt(balances.USDC)} USDC`}</span></span></div>
+        <div className="amt-top"><span>Amount</span><span>Wallet: <span className="mono" style={{color: "var(--text-2)"}} id="depUsdcWalletBal">{balancesLoading ? "Loading…" : `${fmtAmt(balances.USDC)} USDC`}</span></span></div>
         <div className="amt-row">
           <input id="depAmt" inputMode="decimal" placeholder="0.00" aria-label="Deposit amount in dollars" />
           <span className="unit">USD</span>
@@ -497,7 +497,7 @@ export default function Overlays() {
       </div>
       <div className="both-link"><span className="both-link-line"></span><span className="both-link-badge">matched to pool ratio</span><span className="both-link-line"></span></div>
       <div className="amt-box">
-        <div className="amt-top"><span>Dollars</span><span>Wallet: <span className="mono" style={balancesLoading ? {color: "var(--text-2)", opacity: 0.5} : {color: "var(--text-2)"}} id="depBothUsdcBal">{balancesLoading ? "Loading…" : `${fmtAmt(balances.USDC)} USDC`}</span> <button className="mini-max" data-max="usdc" type="button">Max</button></span></div>
+        <div className="amt-top"><span>Dollars</span><span>Wallet: <span className="mono" style={{color: "var(--text-2)"}} id="depBothUsdcBal">{balancesLoading ? "Loading…" : `${fmtAmt(balances.USDC)} USDC`}</span> <button className="mini-max" data-max="usdc" type="button">Max</button></span></div>
         <div className="amt-row"><span className="coin c-usd dep-coin">$</span><input id="depUsdcIn" inputMode="decimal" placeholder="0.00" aria-label="USDC amount" /><span className="unit">USDC</span></div>
       </div>
       <div className="both-total"><span>Total value</span><span className="v mono" id="depBothTotal">$0.00</span></div>
@@ -548,7 +548,7 @@ export default function Overlays() {
       <span>Balcore protects your deposit by <b>token count</b>, not dollar value — the quantity of each token you put in is the quantity it works to preserve. Non-custodial — your keys, your control.</span>
     </div>
 
-    <button className="cta" id="depCta" disabled={true}>Enter an amount</button>
+    <button className="cta" id="depCta" aria-live="polite" disabled={true}>Enter an amount</button>
     <div className="br-done" id="depDone" hidden={true}>
       <div className="bd-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
       <h3>Deposit confirmed</h3>
@@ -635,7 +635,7 @@ export default function Overlays() {
       <span id="wdNotice">Your funds keep making markets until settlement, then arrive in your wallet — no further action needed.</span>
     </div>
 
-    <button className="cta" id="wdCta" disabled={true}>Enter an amount</button>
+    <button className="cta" id="wdCta" aria-live="polite" disabled={true}>Enter an amount</button>
     <div className="m-foot">Requests can be cancelled any time before the weekly cutoff.</div>
   </div>
 </div>
