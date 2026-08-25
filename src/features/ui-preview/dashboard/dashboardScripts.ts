@@ -371,10 +371,38 @@ window.__countUp = function(el){
     const pageItem = document.querySelector('.nav-item[data-view="'+cur+'"]');
     if (pageItem) pageItem.classList.add('active');
   }
-  const open = ov => { ov.classList.add('open'); document.body.style.overflow='hidden'; const i = ov.querySelector('input'); if(i) i.focus(); };
+  // --- focus management: trap Tab inside the open dialog, restore focus on close ---
+  const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const lastTrigger = new WeakMap();
+  function visibleFocusables(ov){
+    return Array.from(ov.querySelectorAll(FOCUSABLE)).filter(el => el.offsetParent !== null || el === document.activeElement);
+  }
+  function onTrapKey(e){
+    if (e.key !== 'Tab') return;
+    const ov = document.querySelector('.overlay.open');
+    if (!ov) return;
+    const items = visibleFocusables(ov);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && (document.activeElement === first || !ov.contains(document.activeElement))){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+  document.addEventListener('keydown', onTrapKey, true);
+  const open = ov => {
+    lastTrigger.set(ov, document.activeElement);
+    ov.classList.add('open'); document.body.style.overflow='hidden';
+    const i = ov.querySelector('input');
+    const target = i || visibleFocusables(ov)[0];
+    if (target) target.focus();
+  };
   const close = ov => {
+    const wasOpen = ov.classList.contains('open');
     ov.classList.remove('open'); document.body.style.overflow='';
     if (ov === ovD || ov === ovW) restoreNav();
+    if (wasOpen){
+      const t = lastTrigger.get(ov);
+      if (t && typeof t.focus === 'function' && document.contains(t)) t.focus();
+    }
   };
   navDeposit.addEventListener('click',e=>{ e.preventDefault(); setModalActive(navDeposit); open(ovD); });
   navWithdraw.addEventListener('click',e=>{ e.preventDefault(); setModalActive(navWithdraw); open(ovW); });
