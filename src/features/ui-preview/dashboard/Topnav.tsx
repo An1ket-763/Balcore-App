@@ -20,6 +20,16 @@ export default function Topnav({
     <WrongNetworkBanner />
     <a className="m-brand" href="#" aria-label="Balcore home"><img src={LOGO} width="24" height="24" alt="" /> Balcore</a>
     <div className="topnav">
+      <button
+        className="nav-toggle"
+        type="button"
+        aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={menuOpen}
+        aria-controls="sideNav"
+        onClick={onMenuToggle}
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M2.5 4.5h13M2.5 9h13M2.5 13.5h13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+      </button>
       <div className="search-bar">
         <svg className="search-ic" width="16" height="16" viewBox="0 0 17 17" fill="none"><circle cx="7.5" cy="7.5" r="5" stroke="currentColor" strokeWidth="1.5" /><path d="m11.5 11.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
         <input type="text" id="poolSearch" placeholder="Search assets & pools" aria-label="Search assets and pools" autoComplete="off" />
