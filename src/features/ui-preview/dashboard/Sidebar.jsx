@@ -1,14 +1,60 @@
 import { useAccount } from "wagmi";
 import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
+import { useTokenBalances } from "./data/balances";
+import { getTokenPrices } from "./data/prices";
+
+function fmtCompactUsd(n) {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return "$" + (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (abs >= 1_000) return "$" + (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+const CIRCUMFERENCE = 213.6;
+
+const BUCKETS = [
+  { key: "USDC", label: "Dollar", color: "#2fa96e" },
+  { key: "BTC", label: "Bitcoin", color: "#f7931a" },
+  { key: "TSLA", label: "Tesla", color: "#d63031" },
+  { key: "GOLD", label: "Gold", color: "#d9b24a" },
+];
+
 export default function Sidebar({ displayName = "", open = false, onClose = () => {} }) {
   // displayName is kept for API compatibility but no longer rendered here.
   const { isConnected, chain } = useAccount();
   const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
 
+  const { balances, isLoading } = useTokenBalances();
+  const prices = getTokenPrices();
+
   const disabledLinkProps = wrongNetwork
     ? { "aria-disabled": true, title: "Switch to Avalanche Fuji to use this", style: { opacity: 0.45, pointerEvents: "none" }, onClick: (e) => e.preventDefault() }
     : {};
+
+  const values = BUCKETS.map((b) => balances[b.key] * (prices[b.key]?.usd ?? 0));
+  const total = values.reduce((s, v) => s + v, 0);
+
+  let runningOffset = 0;
+  const segments = BUCKETS.map((bucket, i) => {
+    const value = values[i];
+    const pct = total > 0 ? (value / total) * 100 : 0;
+    const arc = (pct / 100) * CIRCUMFERENCE;
+    const segment = {
+      ...bucket,
+      value,
+      pct,
+      arc,
+      dashArray: `${arc} ${CIRCUMFERENCE}`,
+      offset: -runningOffset,
+    };
+    runningOffset += arc;
+    return segment;
+  });
+
+  const ariaLabel =
+    "Portfolio allocation: " +
+    segments.map((s) => `${s.label.toLowerCase()} ${Math.round(s.pct)}%`).join(", ");
 
   return (
     <>
@@ -45,21 +91,46 @@ export default function Sidebar({ displayName = "", open = false, onClose = () =
 
     <div className="side-card">
       <div className="card-label" style={{marginBottom: "14px"}}>Portfolio</div>
-      <div className="donut-wrap">
-        <svg className="donut-svg" width="86" height="86" viewBox="0 0 86 86" role="img" aria-label="Portfolio allocation: dollars 50%, bitcoin 20%, tesla 17%, gold 13%">
+      <div className={`donut-wrap${isLoading ? " is-loading" : ""}`} aria-busy={isLoading}>
+        <svg className="donut-svg" width="86" height="86" viewBox="0 0 86 86" role="img" aria-label={ariaLabel}>
           <circle cx="43" cy="43" r="34" fill="none" stroke="rgba(255,255,255,.06)" strokeWidth="11" />
-          <circle className="pf-seg" data-seg="0" data-name="Dollar" data-pct="50%" data-val="$1.21M" data-color="#2fa96e" cx="43" cy="43" r="34" fill="none" stroke="#2fa96e" strokeWidth="11" strokeDasharray="106.8 213.6" transform="rotate(-90 43 43)" ><title>Dollar · 50% · $1.21M</title></circle>
-          <circle className="pf-seg" data-seg="1" data-name="Bitcoin" data-pct="20%" data-val="$484K" data-color="#f7931a" cx="43" cy="43" r="34" fill="none" stroke="#f7931a" strokeWidth="11" strokeDasharray="42.7 213.6" strokeDashoffset="-106.8" transform="rotate(-90 43 43)" ><title>Bitcoin · 20% · $484K</title></circle>
-          <circle className="pf-seg" data-seg="2" data-name="Tesla" data-pct="17%" data-val="$411K" data-color="#d63031" cx="43" cy="43" r="34" fill="none" stroke="#d63031" strokeWidth="11" strokeDasharray="36.3 213.6" strokeDashoffset="-149.5" transform="rotate(-90 43 43)" ><title>Tesla · 17% · $411K</title></circle>
-          <circle className="pf-seg" data-seg="3" data-name="Gold" data-pct="13%" data-val="$314K" data-color="#d9b24a" cx="43" cy="43" r="34" fill="none" stroke="#d9b24a" strokeWidth="11" strokeDasharray="27.8 213.6" strokeDashoffset="-185.8" transform="rotate(-90 43 43)" ><title>Gold · 13% · $314K</title></circle>
-          <text className="pf-cval" x="43" y="40" textAnchor="middle" fontFamily="IBM Plex Mono,monospace" fontSize="13" fontWeight="500">$2.4M</text>
+          {segments.map((s, i) => (
+            <circle
+              key={s.key}
+              className="pf-seg"
+              data-seg={i}
+              data-name={s.label}
+              data-pct={`${Math.round(s.pct)}%`}
+              data-val={fmtCompactUsd(s.value)}
+              data-color={s.color}
+              cx="43"
+              cy="43"
+              r="34"
+              fill="none"
+              stroke={s.color}
+              strokeWidth="11"
+              strokeDasharray={s.dashArray}
+              strokeDashoffset={s.offset}
+              transform="rotate(-90 43 43)"
+            >
+              <title>{`${s.label} · ${Math.round(s.pct)}% · ${fmtCompactUsd(s.value)}`}</title>
+            </circle>
+          ))}
+          <text className="pf-cval" x="43" y="40" textAnchor="middle" fontFamily="IBM Plex Mono,monospace" fontSize="13" fontWeight="500">
+            {isLoading ? "…" : fmtCompactUsd(total)}
+          </text>
           <text className="pf-clab" x="43" y="53" textAnchor="middle" fontFamily="IBM Plex Sans,sans-serif" fontSize="9">total</text>
         </svg>
         <div className="legend">
-          <div className="row" data-seg="0"><span className="name"><span className="dot" style={{background: "#2fa96e"}}></span>Dollar</span><b>50%</b></div>
-          <div className="row" data-seg="1"><span className="name"><span className="dot" style={{background: "#f7931a"}}></span>Bitcoin</span><b>20%</b></div>
-          <div className="row" data-seg="2"><span className="name"><span className="dot" style={{background: "#d63031"}}></span>Tesla</span><b>17%</b></div>
-          <div className="row" data-seg="3"><span className="name"><span className="dot" style={{background: "#d9b24a"}}></span>Gold</span><b>13%</b></div>
+          {segments.map((s, i) => (
+            <div key={s.key} className="row" data-seg={i}>
+              <span className="name">
+                <span className="dot" style={{background: s.color}}></span>
+                {s.label}
+              </span>
+              <b>{isLoading ? <span className="is-loading">…</span> : `${Math.round(s.pct)}%`}</b>
+            </div>
+          ))}
         </div>
       </div>
     </div>
