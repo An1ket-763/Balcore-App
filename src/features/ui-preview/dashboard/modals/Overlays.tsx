@@ -582,7 +582,7 @@ export default function Overlays() {
     </div>
 
     <div className="amt-box">
-      <div className="amt-top"><span>Amount</span><span>In position: <span className="mono" style={{color: "var(--text-2)"}}>$1,325,000</span></span></div>
+      <div className="amt-top"><span>Amount</span><span>In position: <span className="mono" style={{color: "var(--text-2)"}}>$1,325,000</span><span style={{marginLeft: "12px"}}>In your wallet: <span className="mono" style={{color: "var(--text-2)"}}>{balancesLoading ? <span className="is-loading">Loading…</span> : fmtUsd((Object.keys(balances) as TokenSymbol[]).reduce((s, k) => s + balances[k] * (prices[k]?.usd ?? 0), 0))}</span></span></span></div>
       <div className="amt-row">
         <input id="wdAmt" inputMode="decimal" placeholder="0.00" aria-label="Withdrawal amount in dollars" />
         <span className="unit">USD</span>
