@@ -32,8 +32,9 @@ export default function Topnav({
       </button>
       <div className="search-bar">
         <svg className="search-ic" width="16" height="16" viewBox="0 0 17 17" fill="none"><circle cx="7.5" cy="7.5" r="5" stroke="currentColor" strokeWidth="1.5" /><path d="m11.5 11.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-        <input type="text" id="poolSearch" placeholder="Search assets & pools" aria-label="Search assets and pools" autoComplete="off" />
+        <input type="text" id="poolSearch" placeholder="Search assets & pools" aria-label="Search assets and pools" autoComplete="off" role="combobox" aria-expanded="false" aria-controls="cmdkMenu" />
         <span className="search-kbd"><kbd>⌘</kbd><kbd>K</kbd></span>
+        <div className="cmdk-menu" id="cmdkMenu" role="listbox" aria-label="Search results"></div>
       </div>
       <div className="top-actions">
         <button className="theme-btn" id="themeToggle" data-theme-toggle={true} aria-label="Switch to light mode" aria-pressed="false" title="Toggle theme"><svg className="ic-sun" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.5" /><path d="M8 1.2v1.8M8 13v1.8M1.2 8H3M13 8h1.8M3.2 3.2l1.3 1.3M11.5 11.5l1.3 1.3M12.8 3.2l-1.3 1.3M4.5 11.5l-1.3 1.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg><svg className="ic-moon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5 6 6 0 1 0 13.5 9.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg></button>

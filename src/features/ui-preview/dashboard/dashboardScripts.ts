@@ -1222,12 +1222,37 @@ window.__countUp = function(el){
   })();
 })();
 
-// ---------- pool search (live filter) ----------
+// ---------- command palette (search + navigate, live pool filter) ----------
 (function(){
-  const input = document.getElementById('poolSearch');
+  const input = document.getElementById('poolSearch') as HTMLInputElement | null;
   const empty = document.getElementById('posEmpty');
-  if (!input) return;
-  const positions = () => Array.from(document.querySelectorAll('.pos'));
+  const menu = document.getElementById('cmdkMenu');
+  if (!input || !menu) return;
+  const positions = () => Array.from(document.querySelectorAll<HTMLElement>('.pos'));
+
+  // navigation destinations (existing data-view targets)
+  const NAV = [
+    { name: 'Overview', sub: 'Go to view', target: 'overview' },
+    { name: 'Protocol', sub: 'Go to view', target: 'protocol' },
+    { name: 'Activity', sub: 'Go to view', target: 'activity' },
+  ];
+  // actions that open modals
+  const ACTIONS = [
+    { name: 'Deposit', sub: 'Open modal', target: 'navDeposit' },
+    { name: 'Withdraw', sub: 'Open modal', target: 'navWithdraw' },
+  ];
+
+  // unique pool names harvested from the Protocol view's .pos list
+  function pools(){
+    const seen = new Map<string, string>();
+    positions().forEach(pos => {
+      const pair = pos.getAttribute('data-pair') || '';
+      if (pair && !seen.has(pair)) {
+        seen.set(pair, ((pos.getAttribute('data-hold') || '') + ' ' + (pos.getAttribute('data-coins') || '')).toLowerCase());
+      }
+    });
+    return Array.from(seen, ([name, hay]) => ({ name, hay }));
+  }
 
   function filter(){
     const q = input.value.trim().toLowerCase();
@@ -1243,10 +1268,92 @@ window.__countUp = function(el){
     });
     if (empty) empty.hidden = shown !== 0;
   }
-  input.addEventListener('input', filter);
-  // Escape clears
+
+  let items: HTMLElement[] = [];
+  let hi = -1;
+
+  function closeMenu(){
+    menu.classList.remove('open');
+    menu.innerHTML = '';
+    items = [];
+    hi = -1;
+    input.setAttribute('aria-expanded', 'false');
+  }
+
+  function activate(el: HTMLElement){
+    const kind = el.getAttribute('data-kind');
+    const target = el.getAttribute('data-target') || '';
+    closeMenu();
+    if (kind === 'nav'){
+      const t = document.querySelector('[data-view="' + target + '"]') as HTMLElement | null;
+      if (t) t.click();
+    } else if (kind === 'action'){
+      const t = document.getElementById(target) as HTMLElement | null;
+      if (t) t.click();
+    } else if (kind === 'pool'){
+      const pv = document.getElementById('viewProtocol');
+      if (pv && getComputedStyle(pv).display === 'none'){
+        const t = document.querySelector('[data-view="protocol"]') as HTMLElement | null;
+        if (t) t.click();
+      }
+      input.value = target;
+      filter();
+    }
+    input.blur();
+  }
+
+  function setHi(i: number){
+    hi = i;
+    items.forEach((el, j) => el.classList.toggle('on', j === hi));
+  }
+
+  function renderMenu(){
+    const q = input.value.trim().toLowerCase();
+    if (!q){ closeMenu(); return; }
+    const matches: { kind: string; name: string; sub: string; target: string }[] = [];
+    NAV.forEach(n => { if (n.name.toLowerCase().includes(q)) matches.push({ kind: 'nav', name: n.name, sub: n.sub, target: n.target }); });
+    ACTIONS.forEach(a => { if (a.name.toLowerCase().includes(q)) matches.push({ kind: 'action', name: a.name, sub: a.sub, target: a.target }); });
+    pools().forEach(p => { if (p.name.toLowerCase().includes(q) || p.hay.includes(q)) matches.push({ kind: 'pool', name: p.name, sub: 'Pool · filter on Protocol', target: p.name }); });
+    menu.innerHTML = '';
+    if (!matches.length){ closeMenu(); return; }
+    matches.forEach(m => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pool-menu-item';
+      b.setAttribute('role', 'option');
+      b.setAttribute('data-kind', m.kind);
+      b.setAttribute('data-target', m.target);
+      const body = document.createElement('span');
+      body.className = 'pmi-body';
+      const nm = document.createElement('span');
+      nm.className = 'pmi-name';
+      nm.textContent = m.name;
+      const sb = document.createElement('span');
+      sb.className = 'pmi-sub';
+      sb.textContent = m.sub;
+      body.appendChild(nm);
+      body.appendChild(sb);
+      b.appendChild(body);
+      // mousedown so selection fires before the input's blur closes the menu
+      b.addEventListener('mousedown', e => { e.preventDefault(); activate(b); });
+      menu.appendChild(b);
+    });
+    items = Array.from(menu.querySelectorAll<HTMLElement>('.pool-menu-item'));
+    hi = -1;
+    menu.classList.add('open');
+    input.setAttribute('aria-expanded', 'true');
+  }
+
+  input.addEventListener('input', () => { filter(); renderMenu(); });
+  input.addEventListener('focus', renderMenu);
+  input.addEventListener('blur', () => { setTimeout(closeMenu, 120); });
   input.addEventListener('keydown', e => {
-    if (e.key === 'Escape'){ input.value = ''; filter(); input.blur(); }
+    // Escape clears + closes + blurs
+    if (e.key === 'Escape'){ input.value = ''; filter(); closeMenu(); input.blur(); return; }
+    if (!menu.classList.contains('open')) return;
+    if (e.key === 'ArrowDown'){ e.preventDefault(); setHi(Math.min(hi + 1, items.length - 1)); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); setHi(Math.max(hi - 1, 0)); }
+    else if (e.key === 'Enter'){ e.preventDefault(); const el = items[hi >= 0 ? hi : 0]; if (el) activate(el); }
   });
 
   // ⌘K / Ctrl-K focuses the search
