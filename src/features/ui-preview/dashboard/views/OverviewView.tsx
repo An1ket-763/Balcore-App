@@ -1,8 +1,42 @@
+import { useAccount } from "wagmi";
 import { useTokenBalances } from "../data/balances";
 import { getTokenPrices } from "../data/prices";
 import { useActivity } from "../data/activity";
+import { shortenAddress } from "../walletUtils";
 
-export default function OverviewView() {
+function useGreeting(displayName?: string) {
+  const { address } = useAccount();
+  const [greeting, setGreeting] = useState(() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 18) return "Good afternoon";
+    return "Good evening";
+  });
+
+  useEffect(() => {
+    const update = () => {
+      const h = new Date().getHours();
+      let text = "Good evening";
+      if (h < 12) text = "Good morning";
+      else if (h < 18) text = "Good afternoon";
+      setGreeting(text);
+    };
+    update();
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const identity = displayName?.trim() || shortenAddress(address) || "";
+  return { greeting, identity };
+}
+
+type OverviewViewProps = {
+  displayName?: string;
+};
+
+export default function OverviewView({ displayName }: OverviewViewProps) {
+  const { greeting, identity } = useGreeting(displayName);
+
   const { balances, isLoading: balancesLoading } = useTokenBalances();
   const {
     items: activityItems,
