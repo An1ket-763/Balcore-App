@@ -89,7 +89,7 @@ export default function DashboardApp() {
           menuOpen={menuOpen}
           onMenuToggle={() => setMenuOpen((v) => !v)}
         />
-        <OverviewView />
+        <OverviewView displayName={displayName} />
         <ProtocolView />
         <ActivityView />
       </main>
