@@ -81,6 +81,14 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 .app{display:grid;grid-template-columns:190px 1fr;min-height:100vh}
 
+/* page greeting */
+.page-header{padding:6px 0 18px}
+.page-greeting{font-size:26px;font-weight:600;color:var(--text);line-height:1.25;margin:0}
+.greet-muted{color:var(--text-2);font-weight:500}
+.greet-name{color:var(--violet)}
+.page-subtitle{margin-top:4px;font-size:14px;color:var(--text-3)}
+@media (max-width:720px){.page-greeting{font-size:22px}.page-subtitle{font-size:13px}}
+
 /* ---------- sidebar ---------- */
 .side{border-right:1px solid var(--line-soft);padding:22px 16px;display:flex;flex-direction:column;gap:26px;position:sticky;top:0;height:100vh;overflow-y:auto}
 .logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;padding:2px 8px}
