@@ -3,6 +3,8 @@ import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
 import { useTokenBalances } from "./data/balances";
 import { getTokenPrices } from "./data/prices";
+import { shortenAddress } from "./walletUtils";
+
 
 function fmtCompactUsd(n) {
   const abs = Math.abs(n);
@@ -21,8 +23,9 @@ const BUCKETS = [
 ];
 
 export default function Sidebar({ displayName = "", open = false, onClose = () => {} }) {
-  // displayName is kept for API compatibility but no longer rendered here.
-  const { isConnected, chain } = useAccount();
+  const { isConnected, chain, address } = useAccount();
+  const identityLabel = displayName.trim() || shortenAddress(address);
+
   const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
 
   const { balances, isLoading } = useTokenBalances();
@@ -135,6 +138,12 @@ export default function Sidebar({ displayName = "", open = false, onClose = () =
       </div>
     </div>
 
+    <div className="user">
+      <div className="user-id">
+        <b>{identityLabel}</b>
+        {displayName.trim() ? <span>{shortenAddress(address)}</span> : null}
+      </div>
+    </div>
   </aside>
     </>
   );
