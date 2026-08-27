@@ -138,6 +138,12 @@ export default function Sidebar({ displayName = "", open = false, onClose = () =
       </div>
     </div>
 
+    <div className="user">
+      <div className="user-id">
+        <b>{identityLabel}</b>
+        {displayName.trim() ? <span>{shortenAddress(address)}</span> : null}
+      </div>
+    </div>
   </aside>
     </>
   );
