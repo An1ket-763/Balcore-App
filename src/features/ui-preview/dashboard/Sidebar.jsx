@@ -3,6 +3,8 @@ import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
 import { useTokenBalances } from "./data/balances";
 import { getTokenPrices } from "./data/prices";
+import { shortenAddress } from "./walletUtils";
+
 
 function fmtCompactUsd(n) {
   const abs = Math.abs(n);
