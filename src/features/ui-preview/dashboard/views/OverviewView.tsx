@@ -56,6 +56,14 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
     <div className="grid view" id="viewOverview">
       
       <div className="col-main">
+        <header className="page-header">
+          <h1 className="page-greeting">
+            <span className="greet-muted">{greeting}, </span>
+            <span className="greet-name">{identity}</span>
+          </h1>
+          <p className="page-subtitle">Here's what's happening with your positions today</p>
+        </header>
+
 
         
         <div className="wd-tracker" id="wdTracker" hidden={true}>
