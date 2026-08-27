@@ -23,8 +23,9 @@ const BUCKETS = [
 ];
 
 export default function Sidebar({ displayName = "", open = false, onClose = () => {} }) {
-  // displayName is kept for API compatibility but no longer rendered here.
-  const { isConnected, chain } = useAccount();
+  const { isConnected, chain, address } = useAccount();
+  const identityLabel = displayName.trim() || shortenAddress(address);
+
   const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
 
   const { balances, isLoading } = useTokenBalances();
