@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { useTokenBalances } from "../data/balances";
 import { getTokenPrices } from "../data/prices";
