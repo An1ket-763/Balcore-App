@@ -42,7 +42,7 @@ export default function Topnav({
           className="swap-btn"
           id="swapBtn"
           aria-disabled={wrongNetwork ? true : undefined}
-          title={wrongNetwork ? "Switch to Avalanche Fuji to use this" : undefined}
+          title={wrongNetwork ? `Switch to ${defaultChain.name} to use this` : undefined}
           style={wrongNetwork ? { opacity: 0.45, pointerEvents: "none" } : undefined}
           onClick={wrongNetwork ? (e) => { e.preventDefault(); e.stopPropagation(); } : undefined}
         >

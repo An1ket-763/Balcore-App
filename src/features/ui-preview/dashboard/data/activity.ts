@@ -2,6 +2,7 @@ import { useAccount } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { formatUnits } from "viem";
 import { USDC_ADDRESS } from "./balances";
+import { snowtraceApiBase } from "@/lib/wagmi";
 
 export type ActivityType = "fees" | "settlement" | "rebalance" | "transfer";
 
@@ -17,7 +18,7 @@ export interface ActivityItem {
   time: string;
 }
 
-const SNOWTRACE_API = "https://api-testnet.snowtrace.io/api";
+const SNOWTRACE_API = snowtraceApiBase;
 /** Optional — Snowtrace's free tier works without a key. */
 const API_KEY = (import.meta.env["VITE_SNOWTRACE_API_KEY"] as string | undefined) ?? "";
 
@@ -190,7 +191,7 @@ export interface UseActivityResult {
 }
 
 /**
- * Real wallet transfers from Snowtrace (Fuji), merged with the illustrative
+ * Real wallet transfers from Snowtrace (selected Avalanche chain), merged with the illustrative
  * protocol events. Never falls back to mock transfers on failure.
  */
 export function useActivity(): UseActivityResult {
