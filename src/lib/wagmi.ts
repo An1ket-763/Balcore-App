@@ -17,11 +17,9 @@ export const isMainnet = chainEnv === "mainnet";
 export const defaultChain = isMainnet ? avalanche : avalancheFuji;
 
 /** Both Avalanche chains stay available; the selected one comes first (connection priority). */
-export const chains = (
-  isMainnet
-    ? [avalanche, avalancheFuji, mainnet, base, arbitrum, polygon]
-    : [avalancheFuji, avalanche, mainnet, base, arbitrum, polygon]
-) as unknown as readonly [typeof avalanche, ...(typeof chains)[number][]];
+const mainnetFirst = [avalanche, avalancheFuji, mainnet, base, arbitrum, polygon] as const;
+const testnetFirst = [avalancheFuji, avalanche, mainnet, base, arbitrum, polygon] as const;
+export const chains: typeof mainnetFirst | typeof testnetFirst = isMainnet ? mainnetFirst : testnetFirst;
 
 /** Block-explorer base URL for the selected Avalanche chain. */
 export const explorerBase = isMainnet ? "https://snowtrace.io" : "https://testnet.snowtrace.io";
