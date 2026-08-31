@@ -1,7 +1,7 @@
 import { useAccount } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { formatUnits } from "viem";
-import { FUJI_USDC_ADDRESS } from "./balances";
+import { USDC_ADDRESS } from "./balances";
 
 export type ActivityType = "fees" | "settlement" | "rebalance" | "transfer";
 
@@ -171,7 +171,7 @@ async function fetchWalletActivity(address: string): Promise<ActivityItem[]> {
   const base = { address, page: "1", offset: "25", sort: "desc" };
   const [native, usdc] = await Promise.all([
     callSnowtrace({ module: "account", action: "txlist", startblock: "0", endblock: "99999999", ...base }),
-    callSnowtrace({ module: "account", action: "tokentx", contractaddress: FUJI_USDC_ADDRESS, ...base }),
+    callSnowtrace({ module: "account", action: "tokentx", contractaddress: USDC_ADDRESS, ...base }),
   ]);
 
   const items = [

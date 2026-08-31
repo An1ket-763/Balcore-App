@@ -32,7 +32,7 @@ export const erc20Abi = [
   },
 ] as const;
 
-/** Assets that aren't real tokens on Fuji — still mocked for now. */
+/** Assets that aren't real tokens on Avalanche — still mocked for now. */
 const MOCK_BALANCES = {
   BTC: 0.34,
   ETH: 2.1,
@@ -61,24 +61,24 @@ export function useTokenBalances(): { balances: TokenBalances; isLoading: boolea
 
   const native = useBalance({
     address,
-    chainId: avalancheFuji.id,
+    chainId: defaultChain.id,
     query: { enabled },
   });
 
   const usdcRaw = useReadContract({
     abi: erc20Abi,
-    address: FUJI_USDC_ADDRESS,
+    address: USDC_ADDRESS,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-    chainId: avalancheFuji.id,
+    chainId: defaultChain.id,
     query: { enabled },
   });
 
   const usdcDecimals = useReadContract({
     abi: erc20Abi,
-    address: FUJI_USDC_ADDRESS,
+    address: USDC_ADDRESS,
     functionName: "decimals",
-    chainId: avalancheFuji.id,
+    chainId: defaultChain.id,
     query: { enabled },
   });
 
