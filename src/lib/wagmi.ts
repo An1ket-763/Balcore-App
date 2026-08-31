@@ -6,10 +6,11 @@ import { avalanche, avalancheFuji, mainnet, base, arbitrum, polygon } from "wagm
 const projectId = (import.meta.env["VITE_WALLETCONNECT_PROJECT_ID"] as string | undefined) ?? "";
 
 /**
- * Network selection. "mainnet" makes the app interact with real funds; the
- * default is "testnet" so nobody opts in by accident.
+ * Network selection. "mainnet" is the default; this app is intended for
+ * Avalanche C-Chain mainnet. Set VITE_CHAIN_ENV=testnet to opt into Fuji
+ * for local development only.
  */
-const chainEnv = ((import.meta.env["VITE_CHAIN_ENV"] as string | undefined) ?? "testnet").toLowerCase();
+const chainEnv = ((import.meta.env["VITE_CHAIN_ENV"] as string | undefined) ?? "mainnet").toLowerCase();
 
 export const isMainnet = chainEnv === "mainnet";
 
