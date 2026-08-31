@@ -1,6 +1,7 @@
 import { LOGO } from "../logo";
 import { useTokenBalances } from "../data/balances";
 import { getTokenPrices, type TokenSymbol } from "../data/prices";
+import SwapPanel from "./SwapPanel";
 
 const WALLET_ROWS: { sym: TokenSymbol; coinClass: string; glyph: string; unit: string; pool: string }[] = [
   { sym: "BTC", coinClass: "c-btc", glyph: "₿", unit: "BTC", pool: "btc" },
@@ -172,90 +173,7 @@ export default function Overlays() {
 </div>
 
 <div className="overlay" id="ovSwap" role="dialog" aria-modal="true" aria-labelledby="swapTitle">
-  <div className="modal">
-    <div className="m-head">
-      <h2 id="swapTitle">Swap</h2>
-      <button className="m-close" data-close={true} aria-label="Close">✕</button>
-    </div>
-
-    <div className="swap-field">
-      <div className="swap-field-top"><span>You pay</span><span>Balance: <span className="mono" style={{color: "var(--text-2)"}} id="swapFromBal">14,200 USDC</span></span></div>
-      <div className="swap-pct" id="swapPct">
-        <button className="swap-pct-btn" data-pct="25" type="button">25%</button>
-        <button className="swap-pct-btn" data-pct="50" type="button">50%</button>
-        <button className="swap-pct-btn" data-pct="75" type="button">75%</button>
-        <button className="swap-pct-btn" data-pct="100" type="button">Max</button>
-      </div>
-      <div className="swap-field-row">
-        <input id="swapFrom" inputMode="decimal" placeholder="0.00" aria-label="Amount to pay" />
-        <button className="token-pick" id="swapFromTok"><span className="coin c-usd">$</span>USDC<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
-      </div>
-    </div>
-
-    <div className="swap-mid">
-      <button className="swap-flip" id="swapFlip" aria-label="Flip tokens">
-        <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M5.5 3v9M5.5 12 3 9.5M5.5 12 8 9.5M11.5 14V5M11.5 5 9 7.5M11.5 5 14 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </button>
-    </div>
-
-    <div className="swap-field">
-      <div className="swap-field-top"><span>You receive</span><span>Balance: <span className="mono" style={{color: "var(--text-2)"}} id="swapToBal">0.34 BTC</span></span></div>
-      <div className="swap-field-row">
-        <input id="swapTo" inputMode="decimal" placeholder="0.00" aria-label="Amount to receive" readOnly={true} />
-        <button className="token-pick" id="swapToTok"><span className="coin c-btc">₿</span>BTC<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
-      </div>
-    </div>
-
-    <div className="route-block">
-      <div className="route-head">
-        <span className="k">Route</span>
-        <span className="route-best-tag"><span className="live-dot"></span>Best price</span>
-      </div>
-      <div className="route-list" id="routeList">
-        <button className="route-opt on" data-route="pharaoh" data-rate="63220"><span className="route-ic">🔺</span><span className="route-name">Pharaoh</span><span className="route-out">63,220</span></button>
-        <button className="route-opt" data-route="kyber" data-rate="63190"><span className="route-ic">🌀</span><span className="route-name">KyberSwap</span><span className="route-out">63,190</span></button>
-        <button className="route-opt" data-route="odos" data-rate="63160"><span className="route-ic">◎</span><span className="route-name">Odos</span><span className="route-out">63,160</span></button>
-        <button className="route-opt" data-route="lfj" data-rate="63130"><span className="route-ic lfj-ic"><img src="data:image/png;base64,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" alt="LFJ" /></span><span className="route-name">LFJ</span><span className="route-out">63,130</span></button>
-      </div>
-    </div>
-
-    <div className="slip-block">
-      <div className="slip-head"><span className="slip-label">Max slippage</span><span className="slip-val" id="slipVal">0.5%</span></div>
-      <div className="slip-opts" id="slipOpts">
-        <button className="slip-opt" data-slip="0.1" type="button">0.1%</button>
-        <button className="slip-opt on" data-slip="0.5" type="button">0.5%</button>
-        <button className="slip-opt" data-slip="1" type="button">1%</button>
-        <div className="slip-custom"><input id="slipCustom" inputMode="decimal" placeholder="Custom" aria-label="Custom slippage percent" /><span>%</span></div>
-      </div>
-    </div>
-
-    <div className="notice green">
-      <img src={LOGO} width="15" height="15" alt="" style={{display: "block", flexShrink: "0", marginTop: "1px"}} />
-      <span>Balcore checks the top Avalanche DEXs and routes your swap through whichever gives the best price. Non-custodial.</span>
-    </div>
-
-    <button className="cta" id="swapCta" aria-live="polite" disabled={true}>Enter an amount</button>
-    <div className="br-done" id="swapDone" hidden={true}>
-      <div className="bd-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-      <h3>Swap complete</h3>
-      <div className="bd-amt" id="swapDoneAmt"></div>
-      <button className="cta" id="swapDoneClose">Done</button>
-    </div>
-    <div className="swap-details" id="swapDetails">
-      <div className="swap-det-row">
-        <span className="swap-det-rate" id="swapDetSummary">1 BTC ≈ 63,200 USDC ($63,200.00)</span>
-        <button className="swap-det-link" id="swapDetToggle" type="button" aria-expanded="false" aria-controls="swapDetBody">Show details</button>
-      </div>
-      <div className="swap-rows m-rows swap-det-body" id="swapDetBody">
-        <div className="m-row"><span className="k">Rate</span><span className="v" id="swapRate">1 BTC = 63,200 USDC</span></div>
-        <div className="m-row"><span className="k">Routed via</span><span className="v" id="swapVia">Pharaoh</span></div>
-        <div className="m-row"><span className="k">Min received</span><span className="v" id="swapMinOut">—</span></div>
-        <div className="m-row"><span className="k">Price impact</span><span className="v" id="swapImpact">{"<0.01%"}</span></div>
-        <div className="m-row"><span className="k">Network fee</span><span className="v">≈ $0.02 · Avalanche</span></div>
-      </div>
-    </div>
-    <div className="m-foot">Illustrative rates. Best route selected automatically at swap time.</div>
-  </div>
+  <SwapPanel />
 </div>
 
 
