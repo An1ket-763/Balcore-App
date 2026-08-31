@@ -858,7 +858,7 @@ window.__countUp = function(el){
   const dAmt = document.getElementById('depAmt'), dCta = document.getElementById('depCta');
   const dBtc = document.getElementById('depBtc'), dUsd = document.getElementById('depUsd');
   let BTC_PRICE = 63200; let CUR_SYM = "BTC", CUR_DEC = 6;
-  // live wallet balance (USDC on Fuji) — read fresh on every validation pass
+  // live wallet balance (USDC on the selected Avalanche chain) — read fresh on every validation pass
   const usdcBal = () => { const b = getTokenBalances(); return typeof b.USDC === 'number' ? b.USDC : 0; };
   // format an amount input with thous-separator commas as the user types (cursor-preserving)
   function fmtMoney(el, maxDec){

@@ -1,14 +1,18 @@
 import { useEffect, useMemo } from "react";
 import { useAccount, useBalance, useReadContract } from "wagmi";
 import { formatUnits } from "viem";
-import { avalancheFuji } from "wagmi/chains";
 import type { TokenSymbol } from "./prices";
+import { defaultChain, isMainnet } from "@/lib/wagmi";
 
 /**
- * Circle's official testnet USDC on Avalanche Fuji.
- * https://developers.circle.com/stablecoins/usdc-on-test-networks
+ * Circle-issued native USDC on the selected Avalanche chain.
+ * mainnet: native USDC (NOT the older bridged USDC.e)
+ * testnet: Circle's official Fuji test USDC
+ * https://developers.circle.com/stablecoins/usdc-on-main-networks
  */
-export const FUJI_USDC_ADDRESS = "0x5425890298aed601595a70AB815c96711a31Bc65" as const;
+export const USDC_ADDRESS = (
+  isMainnet ? "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E" : "0x5425890298aed601595a70AB815c96711a31Bc65"
+) as `0x${string}`;
 
 /** Minimal ERC-20 ABI — only what we need for a balance read. */
 export const erc20Abi = [
@@ -28,7 +32,7 @@ export const erc20Abi = [
   },
 ] as const;
 
-/** Assets that aren't real tokens on Fuji — still mocked for now. */
+/** Assets that aren't real tokens on Avalanche — still mocked for now. */
 const MOCK_BALANCES = {
   BTC: 0.34,
   ETH: 2.1,
@@ -57,24 +61,24 @@ export function useTokenBalances(): { balances: TokenBalances; isLoading: boolea
 
   const native = useBalance({
     address,
-    chainId: avalancheFuji.id,
+    chainId: defaultChain.id,
     query: { enabled },
   });
 
   const usdcRaw = useReadContract({
     abi: erc20Abi,
-    address: FUJI_USDC_ADDRESS,
+    address: USDC_ADDRESS,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-    chainId: avalancheFuji.id,
+    chainId: defaultChain.id,
     query: { enabled },
   });
 
   const usdcDecimals = useReadContract({
     abi: erc20Abi,
-    address: FUJI_USDC_ADDRESS,
+    address: USDC_ADDRESS,
     functionName: "decimals",
-    chainId: avalancheFuji.id,
+    chainId: defaultChain.id,
     query: { enabled },
   });
 

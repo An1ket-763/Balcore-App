@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
 import { shortenAddress } from "./walletUtils";
+import { defaultChain, explorerBase } from "@/lib/wagmi";
 
 /**
  * Top-right wallet button + dropdown, driven by the real wagmi connection.
@@ -61,7 +62,7 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
           <div className="wm-addr mono">{short}</div>
           <div className="wm-net">
             <span className="live-dot"></span>
-            {chain?.name ?? "Avalanche Fuji"}
+            {chain?.name ?? defaultChain.name}
           </div>
           {address && (
             <div className="wm-balance">
@@ -97,7 +98,7 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
         <a
           className="wallet-menu-item"
           id="explorerWallet"
-          href={`https://testnet.snowtrace.io/address/${address ?? ""}`}
+          href={`${explorerBase}/address/${address ?? ""}`}
           target="_blank"
           rel="noopener"
           role="menuitem"

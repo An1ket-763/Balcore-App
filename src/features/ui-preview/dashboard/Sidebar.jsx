@@ -32,7 +32,7 @@ export default function Sidebar({ displayName = "", open = false, onClose = () =
   const prices = getTokenPrices();
 
   const disabledLinkProps = wrongNetwork
-    ? { "aria-disabled": true, title: "Switch to Avalanche Fuji to use this", style: { opacity: 0.45, pointerEvents: "none" }, onClick: (e) => e.preventDefault() }
+    ? { "aria-disabled": true, title: `Switch to ${defaultChain.name} to use this`, style: { opacity: 0.45, pointerEvents: "none" }, onClick: (e) => e.preventDefault() }
     : {};
 
   const values = BUCKETS.map((b) => balances[b.key] * (prices[b.key]?.usd ?? 0));
