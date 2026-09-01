@@ -274,7 +274,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .onramp-num{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;text-align:center;font-family:var(--sans);font-size:13px;font-weight:700;line-height:26px;color:#1a1205;background:linear-gradient(135deg,#e9c06a,#d4a24a);border:none;box-shadow:0 2px 9px -3px rgba(224,178,92,.6)}
 
 .onramp-arrow{color:var(--text-3);font-size:12px;padding:4px 0 4px 11px}
-.wallet{font-family:var(--mono);font-size:12.5px;color:var(--text-2);border:1px solid var(--line-soft);border-radius:10px;padding:9px 14px;display:inline-flex;align-items:center;gap:8px;background:none;cursor:pointer;transition:border-color .14s,color .14s}
+.wallet{font-family:var(--mono);font-size:12.5px;color:var(--text-2);border:1px solid var(--line-soft);border-radius:10px;padding:9px 14px;display:inline-flex;align-items:center;gap:8px;background:none;cursor:pointer;transition:border-color .14s,color .14s;white-space:nowrap}
 .wallet:hover{color:var(--text);border-color:rgba(139,123,245,.4)}
 .wallet-caret{transition:transform .18s ease;margin-left:2px}
 .wallet.open .wallet-caret{transform:rotate(180deg)}
@@ -652,7 +652,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 /* ---------- modals ---------- */
 .overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:var(--scrim);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .overlay.open{display:flex}
-.modal{width:100%;max-width:440px;max-height:calc(100vh - 32px);overflow-y:auto;background:linear-gradient(180deg,var(--glass-hi2),var(--glass-lo2));border:1px solid var(--line);border-radius:18px;padding:13px 20px;box-shadow:0 40px 100px var(--sh-60),inset 0 1px 0 var(--wash-06);animation:rise .22s ease}
+.modal{width:100%;max-width:440px;max-height:calc(100dvh - 40px);overflow-y:auto;background:linear-gradient(180deg,var(--glass-hi2),var(--glass-lo2));border:1px solid var(--line);border-radius:18px;padding:13px 20px;box-shadow:0 40px 100px var(--sh-60),inset 0 1px 0 var(--wash-06);animation:rise .22s ease}
 .modal::-webkit-scrollbar{width:8px}
 .modal::-webkit-scrollbar-track{background:transparent}
 .modal::-webkit-scrollbar-thumb{background:rgba(139,123,245,.25);border-radius:99px}
@@ -736,7 +736,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 
 /* ===== responsive: shell collapses to a bottom tab bar on mobile ===== */
-.m-brand{display:none;align-items:center;gap:9px;font-weight:600;font-size:16px;color:var(--text);margin-bottom:16px}
+.m-brand{display:none;align-items:center;gap:9px;font-weight:600;font-size:16px;color:var(--text);flex-shrink:0}
+.swap-btn .btn-label{display:inline}
 .m-brand img{display:block;border-radius:6px}
 @media (max-width:820px){
   .app{grid-template-columns:1fr}
@@ -759,7 +760,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   .nav-item:hover svg{opacity:1}
   .nav-item.active,.nav-item.nav-press{background:rgba(139,123,245,.14);color:var(--violet);transform:none}
   .nav-item.active svg{opacity:1}
-  .m-brand{display:flex}
+  .m-brand{display:flex;margin-bottom:0}
   .main{padding:14px 14px calc(88px + env(safe-area-inset-bottom,0px))}
 }
 @media (max-width:900px){
@@ -770,10 +771,25 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 @media (max-width:560px){
   .pf-side{flex-direction:column}
 }
+/* ===== phone header: one app bar row, search beneath =====
+   .top-actions alone measured 401px inside 401px of usable width, so the
+   hamburger could never share the row and wrapped onto a line of its own.
+   Dropping the Swap/Bridge wordmarks and the wallet address reclaims ~240px. */
 @media (max-width:560px){
-  .topnav{flex-wrap:wrap}
-  .top-actions{order:1;margin-left:auto}
+  .topnav{flex-wrap:wrap;gap:10px}
+  .top-actions{order:1;margin-left:auto;gap:8px}
   .search-bar{order:2;flex:1 1 100%}
+  /* theme/Swap/Bridge become one consistent set of icon buttons — the theme
+     button is filled and 34px by default, which read as a different control */
+  .theme-btn,.swap-btn{width:44px;height:44px;padding:0;gap:0;justify-content:center;background:none}
+  .topnav .nav-toggle{background:none}
+  .swap-btn .btn-label{display:none}
+  .wallet{padding:9px 11px;gap:7px}
+  .wallet .wallet-addr{display:none}
+}
+/* below ~400px even the wordmark has to go; the mark still reads as Balcore */
+@media (max-width:400px){
+  .m-brand .mb-name{display:none}
 }
 
 /* ===== interactive portfolio donut ===== */
@@ -902,6 +918,27 @@ html[data-theme="light"] .lead-you-k{border-color:rgba(91,72,214,.45);background
 .tmi-sym{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--text-3)}
 /* the original menu was positioned by the old imperative script; anchor it to
    the pill instead so it follows the button inside the modal */
+/* on a narrow phone the 2-up route grid truncates names to "Phar…"; the
+   full-screen sheet has the vertical room, so stack them instead */
+@media (max-width:430px){
+  .route-list{grid-template-columns:1fr}
+}
+/* ===== swap modal: header and CTA stay put, only the middle scrolls =====
+   Scoped to .swap-modal so no other modal's layout changes. The panel has more
+   content than a laptop viewport, and scrolling the whole modal pushed the
+   primary action off screen. */
+.swap-modal{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+.swap-modal .m-head{flex:0 0 auto;margin-inline:-20px;padding:0 20px 9px;border-bottom:1px solid var(--line-soft)}
+.swap-modal .swap-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin-inline:-20px;padding-inline:20px}
+.swap-modal .swap-body::-webkit-scrollbar{width:8px}
+.swap-modal .swap-body::-webkit-scrollbar-track{background:transparent}
+.swap-modal .swap-body::-webkit-scrollbar-thumb{background:rgba(139,123,245,.25);border-radius:99px}
+.swap-modal .swap-body::-webkit-scrollbar-thumb:hover{background:rgba(139,123,245,.4)}
+.swap-modal .swap-actions{flex:0 0 auto;padding:12px 0 13px;margin-inline:-20px;padding-inline:20px;background:linear-gradient(180deg,transparent,var(--glass-lo2) 22%);border-top:1px solid var(--line-soft)}
+.swap-modal .swap-actions .cta{margin:0}
+/* the success screen has no action bar, so the body is last and must
+   restore the padding .swap-modal drops for the pinned CTA */
+.swap-modal .swap-body:last-child{padding-bottom:13px}
 .token-pick-wrap{position:relative;flex-shrink:0}
 .token-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:216px}
 /* coin badges for the tokens added alongside AVAX/USDC/BTC */
@@ -1354,6 +1391,13 @@ html[data-theme="light"] .card{box-shadow:0 1px 2px rgba(23,22,48,.06),0 12px 30
   .cta{padding:15px 0;font-size:15.5px}
   @keyframes sheet-up{from{opacity:.6;transform:translateY(28px)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){.modal{animation:none}}
+  /* the swap panel is too tall for a 92dvh sheet — the strip of blurred page
+     above it read as a mistake, so it takes the full screen instead */
+  .modal.swap-modal{height:100dvh;max-height:none;border-radius:0;padding:14px 16px 0}
+  .swap-modal .m-head{margin-inline:-16px;padding:0 16px 9px}
+  .swap-modal .swap-body{margin-inline:-16px;padding-inline:16px}
+  .swap-modal .swap-actions{margin-inline:-16px;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px))}
+  .swap-modal .swap-body:last-child{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 }
 
 /* ===== donut + legend stack cleanly, legend never truncates ===== */
@@ -1390,5 +1434,6 @@ html[data-theme="light"] .card{box-shadow:0 1px 2px rgba(23,22,48,.06),0 12px 30
 /* ===== tap targets ===== */
 @media (max-width:820px){
   .theme-btn,.swap-btn,.wallet{min-height:44px}
+  .nav-toggle{min-width:44px;min-height:44px}
   .quick button,.mini-max{min-height:40px}
 }

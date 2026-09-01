@@ -119,23 +119,39 @@ export default function SwapPanel() {
   }, [selected, slip]);
   const minOutFormatted = minOutWei > 0n ? Number(formatUnits(minOutWei, tokenOut.decimals)) : 0;
 
-  // ---- sanity check against the reference prices ----
-  const priceWarning = useMemo(() => {
-    if (!selected?.amountOutFormatted || typedAmount <= 0) return null;
-    const inUsd = tokenIn.priceKey ? (prices[tokenIn.priceKey]?.usd ?? null) : null;
-    const outUsd = tokenOut.priceKey ? (prices[tokenOut.priceKey]?.usd ?? null) : null;
-    // No honest reference for this pair (sAVAX has none) — skip the check
-    // rather than compare against a price we know to be wrong.
-    if (!inUsd || !outUsd) return null;
-    const liveRate = selected.amountOutFormatted / typedAmount;
-    const refRate = inUsd / outUsd;
-    if (!refRate || !Number.isFinite(liveRate) || liveRate <= 0) return null;
-    const deviation = Math.abs(liveRate - refRate) / refRate;
-    if (deviation > 0.2) {
-      return `On-chain rate is ${(deviation * 100).toFixed(0)}% away from our reference price. Double-check before signing.`;
+  /**
+   * Sanity check, derived from the routes themselves.
+   *
+   * The old version compared the live rate against `prices.ts`, which is still
+   * mock data — so it fired on every single swap and meant nothing. Four
+   * independent quotes for the same swap are a far better reference than a
+   * hardcoded price, and need no feed at all: if they disagree wildly, one
+   * source is stale or broken and that IS worth stopping for.
+   */
+  const routeWarning = useMemo(() => {
+    const outs = routes
+      .filter((r) => r.status === "ok" && r.amountOutFormatted !== null)
+      .map((r) => r.amountOutFormatted as number)
+      .filter((n) => n > 0);
+    if (outs.length < 2) return null;
+    const best = Math.max(...outs);
+    const worst = Math.min(...outs);
+    if (best <= 0) return null;
+    const spreadPct = ((best - worst) / best) * 100;
+    if (spreadPct > 10) {
+      return `Quotes disagree by ${spreadPct.toFixed(0)}% across routes — one source may be stale. Check the amount before signing.`;
     }
     return null;
-  }, [selected, typedAmount, prices, tokenIn, tokenOut]);
+  }, [routes]);
+
+  /** How far the selected route falls behind the best one, in percent. */
+  const behindBestPct = useMemo(() => {
+    if (!selected?.amountOutFormatted || !bestId) return 0;
+    const bestOut = byId[bestId]?.amountOutFormatted;
+    if (!bestOut || bestOut <= 0) return 0;
+    const behind = ((bestOut - selected.amountOutFormatted) / bestOut) * 100;
+    return behind > 0 ? behind : 0;
+  }, [selected, bestId, byId]);
 
   // ---- allowance, against the selected route's own spender ----
   const spender = selected?.spender ?? null;
@@ -511,7 +527,7 @@ export default function SwapPanel() {
   };
 
   return (
-    <div className="modal">
+    <div className="modal swap-modal">
       <div className="m-head">
         <h2 id="swapTitle">Swap</h2>
         <button className="m-close" data-close={true} aria-label="Close">
@@ -521,332 +537,341 @@ export default function SwapPanel() {
 
       {!done && (
         <>
-          <div className="swap-field">
-            <div className="swap-field-top">
-              <span>You pay</span>
-              <span>Balance: {balanceLabel(tokenIn)}</span>
-            </div>
-            <div className="swap-pct" id="swapPct">
-              {[25, 50, 75, 100].map((p) => (
-                <button key={p} className="swap-pct-btn" type="button" onClick={() => setPct(p)}>
-                  {p === 100 ? "Max" : `${p}%`}
-                </button>
-              ))}
-            </div>
-            <div className="swap-field-row">
-              <input
-                id="swapFrom"
-                inputMode="decimal"
-                placeholder="0.00"
-                aria-label="Amount to pay"
-                value={amountIn}
-                onChange={(e) => {
-                  setAmountIn(e.target.value.replace(/[^0-9.]/g, ""));
-                  setTxError(null);
-                }}
-              />
-              {tokenPicker("in", tokenIn)}
-            </div>
-            {exceedsBalance && (
-              <div
-                className="swap-field-top"
-                role="status"
-                aria-live="polite"
-                style={{ color: "var(--red, #e0554b)" }}
-              >
-                <span>Amount exceeds wallet balance</span>
+          <div className="swap-body">
+            <div className="swap-field">
+              <div className="swap-field-top">
+                <span>You pay</span>
+                <span>Balance: {balanceLabel(tokenIn)}</span>
               </div>
-            )}
-          </div>
-
-          <div className="swap-mid">
-            <button
-              className={`swap-flip${flipSpin ? " spin" : ""}`}
-              id="swapFlip"
-              aria-label="Flip tokens"
-              type="button"
-              onClick={flip}
-            >
-              <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
-                <path
-                  d="M5.5 3v9M5.5 12 3 9.5M5.5 12 8 9.5M11.5 14V5M11.5 5 9 7.5M11.5 5 14 7.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <div className="swap-field">
-            <div className="swap-field-top">
-              <span>You receive</span>
-              <span>Balance: {balanceLabel(tokenOut)}</span>
-            </div>
-            <div className="swap-field-row">
-              <input
-                id="swapTo"
-                inputMode="decimal"
-                placeholder="0.00"
-                aria-label="Amount to receive"
-                readOnly={true}
-                value={outValue}
-              />
-              {tokenPicker("out", tokenOut)}
-            </div>
-          </div>
-
-          <div className="route-block">
-            <div className="route-head">
-              <span className="k">Route</span>
-              <span className="route-best-tag" aria-live="polite">
-                {scanning ? (
-                  <>
-                    <span className="scan-spinner"></span>Comparing routes…
-                  </>
-                ) : (
-                  <>
-                    <span className="live-dot"></span>
-                    {overriding ? "Manual route" : "Best price"}
-                  </>
-                )}
-              </span>
-            </div>
-            <div
-              className={`route-list${scanning ? " scanning" : ""}`}
-              id="routeList"
-              role="group"
-              aria-label="Swap route"
-            >
-              {routes.map((route) => {
-                const isSelected = route.id === selectedId;
-                const quoted = route.status === "ok";
-                return (
-                  <button
-                    key={route.id}
-                    type="button"
-                    className={[
-                      "route-opt",
-                      isSelected ? "on" : "",
-                      route.id === bestId ? "is-best" : "",
-                      quoted ? "scan-hit" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    data-route={route.id}
-                    aria-pressed={isSelected}
-                    disabled={!quoted}
-                    title={route.error ?? route.detail ?? route.name}
-                    onClick={() => setPinnedRoute(route.id)}
-                  >
-                    <RouteIcon id={route.id} />
-                    <span className="route-name">{route.name}</span>
-                    <span className="route-out">{routeOutLabel(route)}</span>
+              <div className="swap-pct" id="swapPct">
+                {[25, 50, 75, 100].map((p) => (
+                  <button key={p} className="swap-pct-btn" type="button" onClick={() => setPct(p)}>
+                    {p === 100 ? "Max" : `${p}%`}
                   </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {overriding && (
-            <div className="notice" role="status">
-              <span>
-                Using {selected?.name}. {bestId ? byId[bestId].name : "Another route"} has the best
-                price.{" "}
-                <button
-                  type="button"
-                  className="swap-det-link"
-                  onClick={() => setPinnedRoute(null)}
-                  style={{ padding: 0 }}
-                >
-                  Use best price
-                </button>
-              </span>
-            </div>
-          )}
-
-          <div className="slip-block">
-            <div className="slip-head">
-              <span className="slip-label">Max slippage</span>
-              <span className="slip-val" id="slipVal">
-                {slip}%
-              </span>
-            </div>
-            <div className="slip-opts" id="slipOpts">
-              {[0.1, 0.5, 1].map((s) => (
-                <button
-                  key={s}
-                  className={`slip-opt${slip === s && !customSlip ? " on" : ""}`}
-                  type="button"
-                  onClick={() => {
-                    setSlip(s);
-                    setCustomSlip("");
-                  }}
-                >
-                  {s}%
-                </button>
-              ))}
-              <div className="slip-custom">
+                ))}
+              </div>
+              <div className="swap-field-row">
                 <input
-                  id="slipCustom"
+                  id="swapFrom"
                   inputMode="decimal"
-                  placeholder="Custom"
-                  aria-label="Custom slippage percent"
-                  value={customSlip}
+                  placeholder="0.00"
+                  aria-label="Amount to pay"
+                  value={amountIn}
                   onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9.]/g, "");
-                    setCustomSlip(raw);
-                    const val = parseFloat(raw);
-                    if (!Number.isNaN(val) && val > 0) setSlip(Math.min(val, 50));
+                    setAmountIn(e.target.value.replace(/[^0-9.]/g, ""));
+                    setTxError(null);
                   }}
                 />
-                <span>%</span>
+                {tokenPicker("in", tokenIn)}
               </div>
+              {exceedsBalance && (
+                <div
+                  className="swap-field-top"
+                  role="status"
+                  aria-live="polite"
+                  style={{ color: "var(--red, #e0554b)" }}
+                >
+                  <span>Amount exceeds wallet balance</span>
+                </div>
+              )}
             </div>
-          </div>
 
-          <div className="notice green">
-            <img
-              src={LOGO}
-              width="15"
-              height="15"
-              alt=""
-              style={{ display: "block", flexShrink: "0", marginTop: "1px" }}
-            />
-            <span>
-              Balcore quotes Pharaoh, KyberSwap, Odos and LFJ on every amount and routes through
-              whichever fills best. Non-custodial.
-            </span>
-          </div>
-
-          {!isMainnet && (
-            <div className="notice" role="status">
-              <span>
-                Swaps run against Avalanche mainnet contracts. Set VITE_CHAIN_ENV=mainnet to enable
-                them.
-              </span>
-            </div>
-          )}
-
-          {priceWarning && (
-            <div className="notice" role="alert">
-              <span>{priceWarning}</span>
-            </div>
-          )}
-
-          <button
-            className="cta"
-            id="swapCta"
-            aria-live="polite"
-            disabled={ctaDisabled}
-            onClick={() => ctaAction?.()}
-          >
-            {ctaLabel}
-          </button>
-
-          <div className={`swap-details${detailsOpen ? " open" : ""}`} id="swapDetails">
-            <div className="swap-det-row">
-              <span className="swap-det-rate" id="swapDetSummary">
-                {liveRate > 0
-                  ? `1 ${tokenIn.symbol} ≈ ${formatTokenAmount(tokenOut, liveRate)} ${tokenOut.symbol}`
-                  : `Enter an amount for a live ${tokenIn.symbol}/${tokenOut.symbol} rate`}
-              </span>
+            <div className="swap-mid">
               <button
-                className="swap-det-link"
-                id="swapDetToggle"
+                className={`swap-flip${flipSpin ? " spin" : ""}`}
+                id="swapFlip"
+                aria-label="Flip tokens"
                 type="button"
-                aria-expanded={detailsOpen}
-                aria-controls="swapDetBody"
-                onClick={() => setDetailsOpen((v) => !v)}
+                onClick={flip}
               >
-                {detailsOpen ? "Hide details" : "Show details"}
+                <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
+                  <path
+                    d="M5.5 3v9M5.5 12 3 9.5M5.5 12 8 9.5M11.5 14V5M11.5 5 9 7.5M11.5 5 14 7.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
             </div>
-            <div className="swap-rows m-rows swap-det-body" id="swapDetBody">
-              <div className="m-row">
-                <span className="k">Rate</span>
-                <span className="v" id="swapRate">
-                  {liveRate > 0
-                    ? `1 ${tokenIn.symbol} = ${formatTokenAmount(tokenOut, liveRate)} ${tokenOut.symbol}`
-                    : "—"}
-                </span>
+
+            <div className="swap-field">
+              <div className="swap-field-top">
+                <span>You receive</span>
+                <span>Balance: {balanceLabel(tokenOut)}</span>
               </div>
-              <div className="m-row">
-                <span className="k">Routed via</span>
-                <span className="v" id="swapVia">
-                  {selected?.name ?? "—"}
-                </span>
-              </div>
-              <div className="m-row">
-                <span className="k">Route detail</span>
-                <span className="v">{selected?.detail ?? "—"}</span>
-              </div>
-              <div className="m-row">
-                <span className="k">Min received</span>
-                <span className="v" id="swapMinOut">
-                  {minOutFormatted > 0
-                    ? `${formatTokenAmount(tokenOut, minOutFormatted)} ${tokenOut.symbol}`
-                    : "—"}
-                </span>
-              </div>
-              <div className="m-row">
-                <span className="k">Price impact</span>
-                <span className="v" id="swapImpact">
-                  {selected?.priceImpactPct == null
-                    ? "—"
-                    : selected.priceImpactPct < 0.01
-                      ? "<0.01%"
-                      : `${selected.priceImpactPct.toFixed(2)}%`}
-                </span>
-              </div>
-              <div className="m-row">
-                <span className="k">Est. network fee</span>
-                <span className="v">
-                  {selected?.gasUsd == null
-                    ? "—"
-                    : `$${selected.gasUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
-                </span>
-              </div>
-              <div className="m-row">
-                <span className="k">Network</span>
-                <span className="v">{defaultChain.name}</span>
+              <div className="swap-field-row">
+                <input
+                  id="swapTo"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  aria-label="Amount to receive"
+                  readOnly={true}
+                  value={outValue}
+                />
+                {tokenPicker("out", tokenOut)}
               </div>
             </div>
+
+            <div className="route-block">
+              <div className="route-head">
+                <span className="k">Route</span>
+                <span className="route-best-tag" aria-live="polite">
+                  {scanning ? (
+                    <>
+                      <span className="scan-spinner"></span>Comparing routes…
+                    </>
+                  ) : (
+                    <>
+                      <span className="live-dot"></span>
+                      {overriding ? "Manual route" : "Best price"}
+                    </>
+                  )}
+                </span>
+              </div>
+              <div
+                className={`route-list${scanning ? " scanning" : ""}`}
+                id="routeList"
+                role="group"
+                aria-label="Swap route"
+              >
+                {routes.map((route) => {
+                  const isSelected = route.id === selectedId;
+                  const quoted = route.status === "ok";
+                  return (
+                    <button
+                      key={route.id}
+                      type="button"
+                      className={[
+                        "route-opt",
+                        isSelected ? "on" : "",
+                        route.id === bestId ? "is-best" : "",
+                        quoted ? "scan-hit" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      data-route={route.id}
+                      aria-pressed={isSelected}
+                      disabled={!quoted}
+                      title={route.error ?? route.detail ?? route.name}
+                      onClick={() => setPinnedRoute(route.id)}
+                    >
+                      <RouteIcon id={route.id} />
+                      <span className="route-name">{route.name}</span>
+                      <span className="route-out">{routeOutLabel(route)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {overriding && (
+              <div className="notice" role="status">
+                <span>
+                  Using {selected?.name} —{" "}
+                  {behindBestPct > 0.01
+                    ? `${behindBestPct.toFixed(2)}% less than `
+                    : "same price as "}
+                  {bestId ? byId[bestId].name : "the best route"}.{" "}
+                  <button
+                    type="button"
+                    className="swap-det-link"
+                    onClick={() => setPinnedRoute(null)}
+                    style={{ padding: 0 }}
+                  >
+                    Use best price
+                  </button>
+                </span>
+              </div>
+            )}
+
+            <div className="slip-block">
+              <div className="slip-head">
+                <span className="slip-label">Max slippage</span>
+                <span className="slip-val" id="slipVal">
+                  {slip}%
+                </span>
+              </div>
+              <div className="slip-opts" id="slipOpts">
+                {[0.1, 0.5, 1].map((s) => (
+                  <button
+                    key={s}
+                    className={`slip-opt${slip === s && !customSlip ? " on" : ""}`}
+                    type="button"
+                    onClick={() => {
+                      setSlip(s);
+                      setCustomSlip("");
+                    }}
+                  >
+                    {s}%
+                  </button>
+                ))}
+                <div className="slip-custom">
+                  <input
+                    id="slipCustom"
+                    inputMode="decimal"
+                    placeholder="Custom"
+                    aria-label="Custom slippage percent"
+                    value={customSlip}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9.]/g, "");
+                      setCustomSlip(raw);
+                      const val = parseFloat(raw);
+                      if (!Number.isNaN(val) && val > 0) setSlip(Math.min(val, 50));
+                    }}
+                  />
+                  <span>%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="notice green">
+              <img
+                src={LOGO}
+                width="15"
+                height="15"
+                alt=""
+                style={{ display: "block", flexShrink: "0", marginTop: "1px" }}
+              />
+              <span>
+                Balcore quotes Pharaoh, KyberSwap, Odos and LFJ on every amount and routes through
+                whichever fills best. Non-custodial.
+              </span>
+            </div>
+
+            {!isMainnet && (
+              <div className="notice" role="status">
+                <span>
+                  Swaps run against Avalanche mainnet contracts. Set VITE_CHAIN_ENV=mainnet to
+                  enable them.
+                </span>
+              </div>
+            )}
+
+            {routeWarning && (
+              <div className="notice" role="alert">
+                <span>{routeWarning}</span>
+              </div>
+            )}
+
+            <div className={`swap-details${detailsOpen ? " open" : ""}`} id="swapDetails">
+              <div className="swap-det-row">
+                <span className="swap-det-rate" id="swapDetSummary">
+                  {liveRate > 0
+                    ? `1 ${tokenIn.symbol} ≈ ${formatTokenAmount(tokenOut, liveRate)} ${tokenOut.symbol}`
+                    : `Enter an amount for a live ${tokenIn.symbol}/${tokenOut.symbol} rate`}
+                </span>
+                <button
+                  className="swap-det-link"
+                  id="swapDetToggle"
+                  type="button"
+                  aria-expanded={detailsOpen}
+                  aria-controls="swapDetBody"
+                  onClick={() => setDetailsOpen((v) => !v)}
+                >
+                  {detailsOpen ? "Hide details" : "Show details"}
+                </button>
+              </div>
+              <div className="swap-rows m-rows swap-det-body" id="swapDetBody">
+                <div className="m-row">
+                  <span className="k">Rate</span>
+                  <span className="v" id="swapRate">
+                    {liveRate > 0
+                      ? `1 ${tokenIn.symbol} = ${formatTokenAmount(tokenOut, liveRate)} ${tokenOut.symbol}`
+                      : "—"}
+                  </span>
+                </div>
+                <div className="m-row">
+                  <span className="k">Routed via</span>
+                  <span className="v" id="swapVia">
+                    {selected?.name ?? "—"}
+                  </span>
+                </div>
+                <div className="m-row">
+                  <span className="k">Route detail</span>
+                  <span className="v">{selected?.detail ?? "—"}</span>
+                </div>
+                <div className="m-row">
+                  <span className="k">Min received</span>
+                  <span className="v" id="swapMinOut">
+                    {minOutFormatted > 0
+                      ? `${formatTokenAmount(tokenOut, minOutFormatted)} ${tokenOut.symbol}`
+                      : "—"}
+                  </span>
+                </div>
+                <div className="m-row">
+                  <span className="k">Price impact</span>
+                  <span className="v" id="swapImpact">
+                    {selected?.priceImpactPct == null
+                      ? "—"
+                      : selected.priceImpactPct < 0.01
+                        ? "<0.01%"
+                        : `${selected.priceImpactPct.toFixed(2)}%`}
+                  </span>
+                </div>
+                <div className="m-row">
+                  <span className="k">Est. network fee</span>
+                  <span className="v">
+                    {selected?.gasUsd == null
+                      ? "—"
+                      : `$${selected.gasUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
+                  </span>
+                </div>
+                <div className="m-row">
+                  <span className="k">Network</span>
+                  <span className="v">{defaultChain.name}</span>
+                </div>
+              </div>
+            </div>
+            <div className="m-foot">
+              All four routes requote every 15s. You pay Avalanche gas in AVAX.
+            </div>
           </div>
-          <div className="m-foot">
-            All four routes requote every 15s. You pay Avalanche gas in AVAX.
+
+          <div className="swap-actions">
+            <button
+              className="cta"
+              id="swapCta"
+              aria-live="polite"
+              disabled={ctaDisabled}
+              onClick={() => ctaAction?.()}
+            >
+              {ctaLabel}
+            </button>
           </div>
         </>
       )}
 
       {done && (
-        <div className="br-done" id="swapDone">
-          <div className="bd-ic">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5 12.5 10 17.5 19 7.5"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+        <div className="swap-body">
+          <div className="br-done" id="swapDone">
+            <div className="bd-ic">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 12.5 10 17.5 19 7.5"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <h3>Swap complete</h3>
+            <div className="bd-amt" id="swapDoneAmt">
+              {done}
+            </div>
+            <button
+              className="cta"
+              id="swapDoneClose"
+              onClick={() => {
+                closeSwapOverlay();
+                reset();
+              }}
+            >
+              Done
+            </button>
           </div>
-          <h3>Swap complete</h3>
-          <div className="bd-amt" id="swapDoneAmt">
-            {done}
-          </div>
-          <button
-            className="cta"
-            id="swapDoneClose"
-            onClick={() => {
-              closeSwapOverlay();
-              reset();
-            }}
-          >
-            Done
-          </button>
         </div>
       )}
     </div>

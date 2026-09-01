@@ -41,6 +41,7 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
         id="walletBtn"
         aria-haspopup="true"
         aria-expanded={open ? "true" : "false"}
+        aria-label={isConnected ? `Wallet ${short}` : undefined}
         onClick={(e) => {
           e.stopPropagation();
           if (isConnected) setOpen((v) => !v);
@@ -49,11 +50,28 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
       >
         <span
           className="live-dot"
-          style={isConnected ? undefined : { background: "var(--text-3)", boxShadow: "none", animation: "none" }}
+          style={
+            isConnected
+              ? undefined
+              : { background: "var(--text-3)", boxShadow: "none", animation: "none" }
+          }
         ></span>
-        {isConnected ? short : "Connect wallet"}
-        <svg className="wallet-caret" width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        {isConnected ? <span className="wallet-addr">{short}</span> : "Connect wallet"}
+        <svg
+          className="wallet-caret"
+          width="11"
+          height="11"
+          viewBox="0 0 12 12"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M3 4.5 6 7.5 9 4.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
       <div className={`wallet-menu${open ? " open" : ""}`} id="walletMenu" role="menu">
@@ -90,8 +108,20 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
           }}
         >
           <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
-            <rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" strokeWidth="1.4" />
+            <rect
+              x="5"
+              y="5"
+              width="9"
+              height="9"
+              rx="1.5"
+              stroke="currentColor"
+              strokeWidth="1.4"
+            />
+            <path
+              d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"
+              stroke="currentColor"
+              strokeWidth="1.4"
+            />
           </svg>
           <span id="copyLabel">{copied ? "Copied ✓" : "Copy address"}</span>
         </button>
@@ -105,11 +135,29 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
           title="See this wallet on the block explorer"
         >
           <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
-            <path d="M8.5 8.5a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2ZM3.2 14c.7-2.3 2.8-3.6 5.3-3.6s4.6 1.3 5.3 3.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M8.5 8.5a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2ZM3.2 14c.7-2.3 2.8-3.6 5.3-3.6s4.6 1.3 5.3 3.6"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           My wallet on the explorer
-          <svg width="12" height="12" viewBox="0 0 17 17" fill="none" style={{ marginLeft: "auto", opacity: ".5" }}>
-            <path d="M7 3H4a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V9M9.5 2.5H14V7M14 2.5 7.5 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 17 17"
+            fill="none"
+            style={{ marginLeft: "auto", opacity: ".5" }}
+          >
+            <path
+              d="M7 3H4a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V9M9.5 2.5H14V7M14 2.5 7.5 9"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </a>
         <button
@@ -123,7 +171,13 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
           }}
         >
           <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
-            <path d="M6.5 2.5H4A1.5 1.5 0 0 0 2.5 4v9A1.5 1.5 0 0 0 4 14.5h2.5M11 11l3-2.5L11 6M6 8.5h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M6.5 2.5H4A1.5 1.5 0 0 0 2.5 4v9A1.5 1.5 0 0 0 4 14.5h2.5M11 11l3-2.5L11 6M6 8.5h8"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           Disconnect
         </button>
