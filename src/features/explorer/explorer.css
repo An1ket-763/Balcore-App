@@ -1,0 +1,446 @@
+/* Balcore Explorer styles — ported from the standalone HTML prototype, scoped to .balcore-explorer */
+.balcore-explorer{
+  color-scheme:dark;
+  --bg:#090912;--panel:#12121d;--panel2:#171725;--line:#29293c;--line2:#202033;
+  --text:#f3f4f8;--text2:#a6a9bc;--text3:#6f7289;--violet:#8d7cf7;--violet2:#aa9eff;
+  --violetSoft:rgba(141,124,247,.13);--mint:#4bdfa1;--mintSoft:rgba(75,223,161,.11);
+  --gold:#f3b850;--goldSoft:rgba(243,184,80,.11);--red:#ef7272;--shadow:0 18px 50px rgba(0,0,0,.28);
+  --mono:'SFMono-Regular','Cascadia Code','Roboto Mono',Consolas,monospace;
+  --sans:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+.balcore-explorer, .balcore-explorer *{box-sizing:border-box;margin:0;padding:0}
+.balcore-explorer{scroll-behavior:smooth}
+.balcore-explorer{min-height:100vh;background:radial-gradient(850px 420px at 88% -10%,rgba(90,67,210,.16),transparent 62%),var(--bg);color:var(--text);font:14px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+.balcore-explorer button,.balcore-explorer input,.balcore-explorer select{font:inherit}
+.balcore-explorer button{color:inherit}
+.balcore-explorer a{color:var(--violet2);text-decoration:none}
+.balcore-explorer :focus-visible{outline:2px solid var(--violet2);outline-offset:2px}
+.balcore-explorer .demo{display:flex;justify-content:center;align-items:center;gap:8px;padding:7px 18px;border-bottom:1px solid var(--line2);background:rgba(141,124,247,.08);color:var(--text2);font-size:12px;text-align:center}
+.balcore-explorer .demo b{color:var(--violet2)}
+.balcore-explorer .topbar{display:grid;grid-template-columns:auto minmax(240px,560px) auto;align-items:center;gap:20px;padding:14px max(22px,calc((100vw - 1160px)/2));border-bottom:1px solid var(--line2);background:rgba(9,9,18,.86);backdrop-filter:blur(16px);position:sticky;top:0;z-index:60}
+.balcore-explorer .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;white-space:nowrap}
+.balcore-explorer .brand-logo{display:block;width:31px;height:31px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(108,42,220,.32))}
+.balcore-explorer .brand small{color:var(--text3);font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-left:2px}
+.balcore-explorer .search{position:relative}
+.balcore-explorer .search input{width:100%;height:40px;padding:0 40px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font:12px var(--mono)}
+.balcore-explorer .search input:focus{border-color:var(--violet);outline:none;box-shadow:0 0 0 4px rgba(141,124,247,.1)}
+.balcore-explorer .search svg{position:absolute;left:13px;top:11px;color:var(--text3)}
+.balcore-explorer .chain{justify-self:end;display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text2);font:11px var(--mono);white-space:nowrap}
+.balcore-explorer .shell{max-width:1160px;margin:0 auto;padding:30px 26px 70px}
+.balcore-explorer .hero{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;padding:26px 28px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(23,23,37,.94),rgba(15,15,25,.9));box-shadow:var(--shadow)}
+.balcore-explorer .eyebrow{color:var(--violet2);font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:9px}
+.balcore-explorer .hero h1{font-size:clamp(29px,4vw,44px);line-height:1.03;letter-spacing:-.045em}
+.balcore-explorer .hero p{max-width:680px;color:var(--text2);font-size:14px;margin-top:12px}
+.balcore-explorer .tabs{display:flex;gap:5px;margin:22px 0 18px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--panel);width:max-content}
+.balcore-explorer .tab{border:0;border-radius:8px;background:transparent;color:var(--text2);padding:9px 16px;cursor:pointer;font-weight:750;font-size:12.5px}
+.balcore-explorer .tab:hover{color:var(--text)}
+.balcore-explorer .tab.on{background:var(--violetSoft);color:var(--violet2);box-shadow:inset 0 0 0 1px rgba(141,124,247,.22)}
+.balcore-explorer .tab-panel{display:none}
+.balcore-explorer .tab-panel.on{display:block}
+.balcore-explorer .section{margin-top:22px}
+.balcore-explorer .section-head{display:flex;align-items:flex-end;gap:12px;margin-bottom:11px}
+.balcore-explorer .section-head h2{font-size:11px;color:var(--text2);font-weight:800;letter-spacing:.15em;text-transform:uppercase}
+.balcore-explorer .section-head p{font-size:12px;color:var(--text3)}
+.balcore-explorer .actions{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.balcore-explorer .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:7px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text2);cursor:pointer;font-size:11px;font-weight:700}
+.balcore-explorer .btn:hover{background:var(--panel2);color:var(--text);border-color:#41415b}
+.balcore-explorer .btn.primary{border-color:transparent;background:var(--violet);color:#0b0a13;font-weight:850}
+.balcore-explorer .range{display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.balcore-explorer .range button{border:0;border-radius:6px;background:transparent;color:var(--text3);padding:5px 9px;cursor:pointer;font:700 10px var(--mono)}
+.balcore-explorer .range button.on{background:var(--violetSoft);color:var(--violet2)}
+.balcore-explorer .period-row{display:flex;align-items:center;gap:12px;margin-bottom:11px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:rgba(18,18,29,.7)}
+.balcore-explorer .period-row .copy{min-width:0}
+.balcore-explorer .period-title{font-weight:750;font-size:12px}
+.balcore-explorer .period-note{color:var(--text3);font-size:10.5px;margin-top:2px}
+.balcore-explorer .period-controls{margin-left:auto;display:flex;gap:6px;align-items:center}
+.balcore-explorer .period-select{min-width:190px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);padding:0 9px;font:10.5px var(--mono)}
+.balcore-explorer .period-nav{width:34px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text2);cursor:pointer;font-size:18px}
+.balcore-explorer .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:11px}
+.balcore-explorer .kpi{padding:16px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(145deg,var(--panel),#10101a);cursor:pointer;transition:transform .15s,border-color .15s}
+.balcore-explorer .kpi:hover{transform:translateY(-2px);border-color:rgba(141,124,247,.5)}
+.balcore-explorer .kpi-top{display:flex;justify-content:space-between;gap:8px;color:var(--text2);font-size:11px}
+.balcore-explorer .proof{color:var(--text3);font:9.5px var(--mono)}
+.balcore-explorer .kpi-val{margin-top:8px;font:800 clamp(20px,2vw,27px) var(--mono);letter-spacing:-.04em}
+.balcore-explorer .mint{color:var(--mint)}
+.balcore-explorer .gold{color:var(--gold)}
+.balcore-explorer .violet{color:var(--violet2)}
+.balcore-explorer .kpi-sub{min-height:32px;margin-top:4px;color:var(--text3);font-size:10.5px}
+.balcore-explorer .chip{display:inline-flex;margin-top:11px;padding:3px 7px;border-radius:6px;background:var(--mintSoft);color:var(--mint);font:700 9.5px var(--mono)}
+.balcore-explorer .money-card,.balcore-explorer .card{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px}
+.balcore-explorer .waterfall-grid{display:grid;grid-template-columns:1.45fr .75fr;gap:11px;margin-top:11px}
+.balcore-explorer .waterfall-card,.balcore-explorer .surplus-card{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px}
+.balcore-explorer .waterfall-card h3,.balcore-explorer .surplus-card h3{font-size:13px}
+.balcore-explorer .waterfall-card>.sub,.balcore-explorer .surplus-card>.sub{color:var(--text3);font-size:11px;margin-top:3px}
+.balcore-explorer .waterfall-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:14px}
+.balcore-explorer .wf-step{position:relative;padding:11px 10px;border:1px solid var(--line2);border-radius:10px;background:#0e0e18;min-width:0}
+.balcore-explorer .wf-step:after{content:'›';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;z-index:2}
+.balcore-explorer .wf-step:last-child:after{display:none}
+.balcore-explorer .wf-n{display:grid;place-items:center;width:20px;height:20px;border-radius:99px;background:var(--violetSoft);color:var(--violet2);font:800 9px var(--mono);margin-bottom:8px}
+.balcore-explorer .wf-l{color:var(--text2);font-size:9.5px;line-height:1.35}
+.balcore-explorer .wf-v{margin-top:5px;font:800 12px var(--mono);white-space:nowrap}
+.balcore-explorer .wf-note{margin-top:4px;color:var(--text3);font-size:8.8px;line-height:1.35}
+.balcore-explorer .surplus-card{cursor:pointer;background:linear-gradient(145deg,rgba(141,124,247,.14),rgba(18,18,29,.96));transition:transform .15s,border-color .15s}
+.balcore-explorer .surplus-card:hover{transform:translateY(-2px);border-color:rgba(141,124,247,.5)}
+.balcore-explorer .surplus-head{display:flex;justify-content:space-between;gap:10px}
+.balcore-explorer .surplus-label{margin-top:14px;color:var(--text3);font-size:9.5px;text-transform:uppercase;letter-spacing:.1em}
+.balcore-explorer .surplus-balance{margin-top:3px;font:850 30px var(--mono);letter-spacing:-.045em;color:var(--violet2)}
+.balcore-explorer .surplus-period{display:inline-flex;margin-top:6px;padding:4px 8px;border-radius:7px;background:var(--mintSoft);color:var(--mint);font:750 9.5px var(--mono)}
+.balcore-explorer .surplus-rule{margin-top:13px;padding-top:12px;border-top:1px solid var(--line2);color:var(--text2);font-size:10.5px;line-height:1.6}
+.balcore-explorer .surplus-rule b{color:var(--text)}
+.balcore-explorer .money-top{display:flex;justify-content:space-between;gap:16px}
+.balcore-explorer .money-top h3,.balcore-explorer .card h3{font-size:13px}
+.balcore-explorer .money-top p,.balcore-explorer .card .sub{color:var(--text3);font-size:11px;margin-top:3px}
+.balcore-explorer .difference{padding:5px 9px;border-radius:999px;background:var(--mintSoft);color:var(--mint);font:750 10px var(--mono);white-space:nowrap}
+.balcore-explorer .flowbar{display:flex;height:16px;margin:16px 0 12px;border-radius:7px;overflow:hidden;background:var(--panel2)}
+.balcore-explorer .flowbar span{display:flex;align-items:center;justify-content:center;color:#090912;font:800 9px var(--mono);min-width:0;overflow:hidden}
+.balcore-explorer .flowlegend{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.balcore-explorer .legend{padding:9px 10px;border:1px solid var(--line2);border-radius:9px;background:#0e0e18}
+.balcore-explorer .legend .l{display:flex;align-items:center;gap:6px;color:var(--text2);font-size:10px}
+.balcore-explorer .swatch{width:8px;height:8px;border-radius:3px}
+.balcore-explorer .legend .v{margin-top:4px;font:750 12px var(--mono)}
+.balcore-explorer .legend .p{color:var(--text3);font:9.5px var(--mono)}
+.balcore-explorer .feed{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.balcore-explorer .feed-row{display:grid;grid-template-columns:150px 1fr 75px auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line2);font-size:11px}
+.balcore-explorer .feed-row:last-child{border:0}
+.balcore-explorer .event-name{font:700 10.5px var(--mono)}
+.balcore-explorer .event-name.fee{color:var(--violet2)}
+.balcore-explorer .event-name.dist{color:var(--mint)}
+.balcore-explorer .event-name.il{color:var(--gold)}
+.balcore-explorer .event-name.res{color:var(--text2)}
+.balcore-explorer .event-name.proto{color:var(--violet2)}
+.balcore-explorer .payload{color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.balcore-explorer .age{color:var(--text3);font:10px var(--mono)}
+.balcore-explorer .tx button{border:0;background:transparent;color:var(--violet2);cursor:pointer;font:10px var(--mono)}
+.balcore-explorer .reserve-mix{display:flex;height:40px;min-width:220px;border-radius:10px;overflow:hidden;background:var(--panel2);border:1px solid var(--line2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
+.balcore-explorer .reserve-segment{display:flex;align-items:center;justify-content:center;min-width:54px;padding:0 8px;color:#090912;font:850 10.5px var(--mono);white-space:nowrap;overflow:hidden;transition:width .35s ease,filter .18s ease}
+.balcore-explorer .reserve-segment:hover{filter:brightness(1.12)}
+.balcore-explorer .reserve-segment.reserve{background:linear-gradient(135deg,var(--violet),var(--violet2))}
+.balcore-explorer .reserve-segment.active{background:linear-gradient(135deg,#35c987,var(--mint))}
+.balcore-explorer .reserve-key{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:9px;color:var(--text3);font-size:10.5px}
+.balcore-explorer .reserve-key span{display:inline-flex;align-items:center;gap:6px}
+.balcore-explorer .reserve-key i{width:8px;height:8px;border-radius:3px;display:inline-block}
+.balcore-explorer .lp-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.balcore-explorer .summary-card{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.balcore-explorer .summary-card .l{color:var(--text2);font-size:10.5px}
+.balcore-explorer .summary-card .v{margin-top:6px;font:800 23px var(--mono)}
+.balcore-explorer .summary-card .s{color:var(--text3);font-size:10px;margin-top:3px}
+.balcore-explorer .ownership{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}
+.balcore-explorer .owner-bar{display:flex;height:44px;border-radius:10px;overflow:hidden;margin:15px 0}
+.balcore-explorer .owner-bar span{display:flex;align-items:center;justify-content:center;color:#090912;font:850 11px var(--mono)}
+.balcore-explorer .owner-notes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.balcore-explorer .owner-note{padding:10px;border:1px solid var(--line2);border-radius:9px;background:#0e0e18}
+.balcore-explorer .owner-note b{font-size:11px}
+.balcore-explorer .owner-note p{margin-top:3px;color:var(--text3);font-size:10px}
+.balcore-explorer .pol-use{display:grid;gap:8px;margin-top:13px}
+.balcore-explorer .use-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line2)}
+.balcore-explorer .use-row:last-child{border:0}
+.balcore-explorer .use-n{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--violetSoft);color:var(--violet2);font:800 10px var(--mono)}
+.balcore-explorer .use-row b{font-size:11px}
+.balcore-explorer .use-row p{color:var(--text3);font-size:10px;margin-top:2px}
+.balcore-explorer .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.balcore-explorer table{width:100%;border-collapse:collapse;min-width:780px}
+.balcore-explorer th,.balcore-explorer td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line2);font-size:11px}
+.balcore-explorer th{color:var(--text3);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;background:#0f0f19}
+.balcore-explorer tr:last-child td{border-bottom:0}
+.balcore-explorer td.mono{font:10.5px var(--mono)}
+.balcore-explorer .provider{display:flex;align-items:center;gap:9px}
+.balcore-explorer .avatar{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:var(--panel2);color:var(--text2);font:800 10px var(--mono);overflow:hidden}
+.balcore-explorer .avatar.pol{background:rgba(141,124,247,.08);border:1px solid rgba(141,124,247,.18)}
+.balcore-explorer .avatar-logo{display:block;width:22px;height:22px;object-fit:contain}
+.balcore-explorer .provider b{font-size:11px}
+.balcore-explorer .provider small{display:block;color:var(--text3);font-size:9.5px}
+.balcore-explorer .badge{display:inline-flex;padding:3px 7px;border-radius:6px;font:750 9px var(--mono)}
+.balcore-explorer .badge.pol{background:var(--violetSoft);color:var(--violet2)}
+.balcore-explorer .badge.user{background:var(--mintSoft);color:var(--mint)}
+.balcore-explorer .pool-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.balcore-explorer .pool-card{padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
+.balcore-explorer .pool-head{display:flex;justify-content:space-between;gap:8px}
+.balcore-explorer .pool-head b{font-size:12px}
+.balcore-explorer .pool-head span{color:var(--text3);font:9.5px var(--mono)}
+.balcore-explorer .pool-total{margin-top:7px;font:800 20px var(--mono)}
+.balcore-explorer .pool-split{display:flex;height:8px;border-radius:5px;overflow:hidden;margin:10px 0}
+.balcore-explorer .pool-rows{display:grid;gap:5px}
+.balcore-explorer .pool-row{display:flex;justify-content:space-between;color:var(--text2);font-size:10px}
+.balcore-explorer .pool-row span:last-child{font-family:var(--mono);color:var(--text)}
+.balcore-explorer .wallet-lite{display:flex;gap:10px}
+.balcore-explorer .wallet-lite input{flex:1;min-width:0;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:#0e0e18;color:var(--text);font:11px var(--mono)}
+.balcore-explorer .wallet-lite input:focus{border-color:var(--violet);outline:none;box-shadow:0 0 0 4px rgba(141,124,247,.1)}
+.balcore-explorer .wallet-result{display:none;margin-top:13px;border:1px solid rgba(141,124,247,.34);border-radius:14px;background:linear-gradient(145deg,rgba(141,124,247,.08),rgba(14,14,24,.98));overflow:hidden}
+.balcore-explorer .wallet-result.show{display:block}
+.balcore-explorer .wallet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:17px 18px;border-bottom:1px solid var(--line2)}
+.balcore-explorer .wallet-kicker{color:var(--violet2);font:800 9px var(--mono);letter-spacing:.13em;text-transform:uppercase}
+.balcore-explorer .wallet-address{margin-top:4px;font:800 13px var(--mono);word-break:break-all}
+.balcore-explorer .wallet-meta{margin-top:4px;color:var(--text3);font-size:10px}
+.balcore-explorer .wallet-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.balcore-explorer .wallet-status{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:var(--mintSoft);color:var(--mint);font:800 9px var(--mono)}
+.balcore-explorer .wallet-status:before{content:'';width:6px;height:6px;border-radius:50%;background:var(--mint)}
+.balcore-explorer .wallet-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:14px 16px}
+.balcore-explorer .wallet-stat{position:relative;padding:12px;border:1px solid var(--line2);border-radius:10px;background:rgba(9,9,18,.62);cursor:pointer;transition:.15s}
+.balcore-explorer .wallet-stat:hover{border-color:rgba(141,124,247,.45);transform:translateY(-1px)}
+.balcore-explorer .wallet-stat .k{color:var(--text3);font-size:9.5px}
+.balcore-explorer .wallet-stat .v{margin-top:4px;font:800 16px var(--mono);letter-spacing:-.025em}
+.balcore-explorer .wallet-stat .s{margin-top:3px;color:var(--text3);font-size:8.8px}
+.balcore-explorer .wallet-stat .wp{position:absolute;right:9px;top:9px;color:var(--text3);font:8px var(--mono)}
+.balcore-explorer .wallet-grid{display:grid;grid-template-columns:1.45fr .85fr;gap:10px;padding:0 16px 14px}
+.balcore-explorer .wallet-panel{min-width:0;padding:14px;border:1px solid var(--line2);border-radius:11px;background:rgba(9,9,18,.62)}
+.balcore-explorer .wallet-panel h4{font-size:11px}
+.balcore-explorer .wallet-panel>.sub{margin-top:2px;color:var(--text3);font-size:9.5px}
+.balcore-explorer .wallet-table-wrap{overflow:auto;margin-top:10px;border:1px solid var(--line2);border-radius:9px}
+.balcore-explorer .wallet-table{min-width:720px}
+.balcore-explorer .wallet-table th,.balcore-explorer .wallet-table td{padding:9px 10px;font-size:9.5px}
+.balcore-explorer .wallet-table th{font-size:8.5px}
+.balcore-explorer .wallet-pair b{font-size:10px}
+.balcore-explorer .wallet-pair small{display:block;color:var(--text3);font-size:8.5px}
+.balcore-explorer .range-status{display:inline-flex;padding:3px 6px;border-radius:6px;background:var(--mintSoft);color:var(--mint);font:750 8.5px var(--mono)}
+.balcore-explorer .wallet-accounting{display:grid;gap:0;margin-top:9px}
+.balcore-explorer .wallet-accounting-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line2);font-size:9.5px}
+.balcore-explorer .wallet-accounting-row:last-child{border:0}
+.balcore-explorer .wallet-accounting-row span:first-child{color:var(--text3)}
+.balcore-explorer .wallet-accounting-row span:last-child{font:750 10px var(--mono);text-align:right}
+.balcore-explorer .wallet-accounting-row.total{margin-top:4px;padding-top:10px;border-top:1px solid var(--line);font-weight:800}
+.balcore-explorer .wallet-accounting-row.total span:first-child{color:var(--text2)}
+.balcore-explorer .wallet-accounting-row.total span:last-child{color:var(--mint);font-size:12px}
+.balcore-explorer .wallet-bottom{display:grid;grid-template-columns:1.2fr .8fr;gap:10px;padding:0 16px 16px}
+.balcore-explorer .wallet-events{margin-top:9px;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.balcore-explorer .wallet-event{display:grid;grid-template-columns:92px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line2);font-size:9.5px}
+.balcore-explorer .wallet-event:last-child{border:0}
+.balcore-explorer .wallet-event .type{font:750 8.8px var(--mono)}
+.balcore-explorer .wallet-event .detail{color:var(--text2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.balcore-explorer .wallet-event .right{color:var(--text3);font:8.8px var(--mono);white-space:nowrap}
+.balcore-explorer .wallet-actions-list{display:grid;gap:7px;margin-top:10px}
+.balcore-explorer .wallet-action{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--line2);border-radius:8px;background:#0e0e18}
+.balcore-explorer .wallet-action span:first-child{color:var(--text2);font-size:9.5px}
+.balcore-explorer .wallet-action span:last-child{font:750 9.5px var(--mono)}
+.balcore-explorer .wallet-zero{display:none;margin-top:13px;padding:18px;border:1px dashed var(--line);border-radius:12px;text-align:center;background:#0e0e18}
+.balcore-explorer .wallet-zero.show{display:block}
+.balcore-explorer .wallet-zero h4{font-size:12px}
+.balcore-explorer .wallet-zero p{max-width:520px;margin:5px auto 0;color:var(--text3);font-size:10px}
+.balcore-explorer .provider-filter{display:none;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;padding:9px 11px;border:1px solid rgba(141,124,247,.3);border-radius:10px;background:var(--violetSoft);color:var(--text2);font-size:10px}
+.balcore-explorer .provider-filter.show{display:flex}
+.balcore-explorer .provider-filter code{color:var(--violet2);font:10px var(--mono);word-break:break-all}
+.balcore-explorer .no-results{text-align:center;color:var(--text3);padding:24px!important}
+.balcore-explorer .note{margin-top:20px;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:rgba(18,18,29,.72);color:var(--text3);font-size:10.5px}
+.balcore-explorer .note b{color:var(--text2)}
+.balcore-explorer .footer{display:flex;justify-content:space-between;gap:12px;margin-top:28px;padding-top:18px;border-top:1px solid var(--line2);color:var(--text3);font-size:10.5px}
+.balcore-explorer .backdrop{position:fixed;inset:0;background:rgba(5,5,10,.72);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:.18s;z-index:90}
+.balcore-explorer .backdrop.open{opacity:1;pointer-events:auto}
+.balcore-explorer .drawer{position:fixed;top:0;right:0;width:min(520px,94vw);height:100vh;overflow:auto;padding:25px;background:linear-gradient(180deg,var(--panel2),var(--panel));border-left:1px solid var(--line);transform:translateX(105%);transition:transform .2s;z-index:91;box-shadow:-25px 0 70px rgba(0,0,0,.45)}
+.balcore-explorer .drawer.open{transform:none}
+.balcore-explorer .drawer-close{position:absolute;right:15px;top:15px;width:31px;height:31px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text2);cursor:pointer}
+.balcore-explorer .drawer-kicker{color:var(--violet2);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:800}
+.balcore-explorer .drawer h2{font-size:20px;margin-top:5px}
+.balcore-explorer .drawer-value{font:850 28px var(--mono);margin-top:10px}
+.balcore-explorer .drawer-range{color:var(--text3);font:10px var(--mono);margin-top:2px}
+.balcore-explorer .drawer-desc{color:var(--text2);font-size:11px;margin-top:12px}
+.balcore-explorer .proof-card{margin-top:17px;padding:14px;border:1px solid var(--line);border-radius:11px;background:#0e0e18}
+.balcore-explorer .proof-card h3{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.balcore-explorer .proof-row{display:grid;grid-template-columns:125px 1fr;gap:12px;padding:8px 0;border-bottom:1px solid var(--line2);font-size:10.5px}
+.balcore-explorer .proof-row:last-child{border:0}
+.balcore-explorer .proof-row span:first-child{color:var(--text3)}
+.balcore-explorer .proof-row span:last-child{font-family:var(--mono);font-weight:650}
+.balcore-explorer .drawer-chart{margin-top:16px}
+.balcore-explorer .chart-hint{color:var(--text3);font:9.5px var(--mono);margin-bottom:7px}
+.balcore-explorer .period-bar{cursor:pointer}
+.balcore-explorer .period-bar:hover rect:not(.bar-hit){opacity:.78}
+.balcore-explorer .period-bar.selected rect:not(.bar-hit){stroke:var(--violet2);stroke-width:2;opacity:1}
+.balcore-explorer .drawer-events{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.balcore-explorer .drawer-event{display:flex;justify-content:space-between;gap:10px;padding:10px 11px;border-bottom:1px solid var(--line2);font-size:10px}
+.balcore-explorer .drawer-event:last-child{border:0}
+.balcore-explorer .drawer-event .l{color:var(--text2)}
+.balcore-explorer .drawer-event .r{color:var(--text3);font:9.5px var(--mono);white-space:nowrap}
+.balcore-explorer .drawer-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
+.balcore-explorer .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,8px);padding:9px 13px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text2);font-size:11px;opacity:0;pointer-events:none;transition:.18s;z-index:120}
+.balcore-explorer .toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:1050px){.balcore-explorer .kpis{grid-template-columns:repeat(3,1fr)}
+.balcore-explorer .waterfall-grid{grid-template-columns:1fr}
+.balcore-explorer .waterfall-steps{grid-template-columns:repeat(3,1fr)}
+.balcore-explorer .wf-step:nth-child(3):after{display:none}
+}
+.balcore-explorer /* Live block-stream behavior */
+.live-value{transition:color .18s ease,transform .18s ease,text-shadow .18s ease}
+.balcore-explorer .live-value.tick-up{animation:valueUp .62s ease}
+.balcore-explorer .live-value.tick-down{animation:valueDown .62s ease}
+@keyframes valueUp{0%{transform:translateY(0);text-shadow:none}35%{transform:translateY(-2px);text-shadow:0 0 18px rgba(75,223,161,.45)}100%{transform:none;text-shadow:none}}
+@keyframes valueDown{0%{transform:translateY(0);text-shadow:none}35%{transform:translateY(2px);text-shadow:0 0 18px rgba(239,114,114,.42)}100%{transform:none;text-shadow:none}}
+.balcore-explorer .live-chip{display:inline-flex;align-items:center;gap:6px;margin-left:7px;color:var(--mint);font:800 8.5px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.balcore-explorer .live-chip:before{content:'';width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px var(--mintSoft);animation:livePulse 1.8s infinite}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.82)}}
+.balcore-explorer .spark svg{overflow:visible}
+.balcore-explorer .spark-point.live{animation:sparkPulse 1.8s ease-in-out infinite}
+@keyframes sparkPulse{0%,100%{r:3;opacity:1}50%{r:4.6;opacity:.55}}
+.balcore-explorer .block-flash{animation:blockFlash .55s ease}
+@keyframes blockFlash{0%{color:var(--mint);text-shadow:0 0 15px rgba(75,223,161,.5)}100%{color:inherit;text-shadow:none}}
+@media(prefers-reduced-motion:reduce){.balcore-explorer .live-value,.balcore-explorer .live-value.tick-up,.balcore-explorer .live-value.tick-down,.balcore-explorer .live-chip:before,.balcore-explorer .spark-point.live,.balcore-explorer .block-flash{animation:none!important;transition:none!important}
+}
+@media(max-width:900px){.balcore-explorer .topbar{grid-template-columns:1fr auto}
+.balcore-explorer .search{grid-column:1/-1;grid-row:2}
+.balcore-explorer .hero{align-items:flex-start}
+.balcore-explorer .kpis,.balcore-explorer .lp-summary{grid-template-columns:repeat(2,1fr)}
+.balcore-explorer .ownership{grid-template-columns:1fr}
+.balcore-explorer .pool-grid{grid-template-columns:1fr}
+.balcore-explorer .flowlegend{grid-template-columns:repeat(2,1fr)}
+.balcore-explorer .wallet-kpis{grid-template-columns:repeat(2,1fr)}
+.balcore-explorer .wallet-grid,.balcore-explorer .wallet-bottom{grid-template-columns:1fr}
+}
+.balcore-explorer .liquidity-overview-card{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(141,124,247,.055),rgba(255,255,255,.012));padding:16px}
+.balcore-explorer .liquidity-overview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.balcore-explorer .liquidity-overview-head h3{margin:0 0 5px;font-size:15px}
+.balcore-explorer .liquidity-overview-head .sub{max-width:720px}
+.balcore-explorer .liquidity-asset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.balcore-explorer .liquidity-asset-grid>.card{margin-top:0!important;background:rgba(255,255,255,.018)}
+.balcore-explorer .reserve-details{margin-top:13px;border-top:1px solid var(--line);padding-top:12px}
+.balcore-explorer .reserve-details summary{cursor:pointer;color:var(--violet2);font-size:12px;font-weight:800;list-style:none;display:flex;align-items:center;justify-content:space-between}
+.balcore-explorer .reserve-details summary::-webkit-details-marker{display:none}
+.balcore-explorer .reserve-details summary:after{content:'+';font-size:18px;color:var(--text2)}
+.balcore-explorer .reserve-details[open] summary:after{content:'−'}
+.balcore-explorer .reserve-details .table-wrap{margin-top:12px}
+@media(max-width:820px){.balcore-explorer .liquidity-asset-grid{grid-template-columns:1fr}
+}
+@media(max-width:620px){.balcore-explorer .demo span:last-child{display:none}
+.balcore-explorer .topbar{padding:12px 15px}
+.balcore-explorer .chain{font-size:0}
+.balcore-explorer .chain:after{content:'C-Chain';font-size:10px}
+.balcore-explorer .shell{padding:20px 14px 50px}
+.balcore-explorer .hero{display:block;padding:21px}
+.balcore-explorer .tabs{width:100%}
+.balcore-explorer .tab{flex:1}
+.balcore-explorer .section-head{align-items:flex-start;flex-direction:column}
+.balcore-explorer .actions{margin-left:0;width:100%}
+.balcore-explorer .range{overflow-x:auto}
+.balcore-explorer .period-row{align-items:flex-start;flex-direction:column}
+.balcore-explorer .period-controls{margin-left:0;width:100%}
+.balcore-explorer .period-select{flex:1;min-width:0}
+.balcore-explorer .kpis,.balcore-explorer .lp-summary{grid-template-columns:1fr}
+.balcore-explorer .waterfall-steps{grid-template-columns:1fr}
+.balcore-explorer .wf-step:after{content:'↓';right:auto;left:50%;top:auto;bottom:-17px;transform:translateX(-50%)}
+.balcore-explorer .flowlegend{grid-template-columns:1fr 1fr}
+.balcore-explorer .feed-row{grid-template-columns:115px 1fr auto}
+.balcore-explorer .feed-row .age{display:none}
+.balcore-explorer .ownership{display:block}
+.balcore-explorer .ownership>.card+ .card{margin-top:11px}
+.balcore-explorer .owner-notes{grid-template-columns:1fr}
+.balcore-explorer .wallet-lite{flex-wrap:wrap}
+.balcore-explorer .wallet-lite input{flex-basis:100%}
+.balcore-explorer .wallet-head{display:block}
+.balcore-explorer .wallet-head-actions{justify-content:flex-start;margin-top:10px}
+.balcore-explorer .wallet-kpis{grid-template-columns:1fr 1fr}
+.balcore-explorer .wallet-grid,.balcore-explorer .wallet-bottom{grid-template-columns:1fr}
+.balcore-explorer .wallet-event{grid-template-columns:82px 1fr}
+.balcore-explorer .wallet-event .right{display:none}
+.balcore-explorer .footer{display:block}
+.balcore-explorer .footer span{display:block;margin-top:5px}
+}
+.balcore-explorer /* — polish pass: calmer,.balcore-explorer flatter chrome — */
+.period-row{padding:0!important;border:0!important;background:none!important;box-shadow:none!important;margin:-2px 0 12px!important;display:flex!important;justify-content:flex-end;align-items:center;gap:10px}
+.balcore-explorer .period-row .copy{display:flex;align-items:baseline;gap:8px}
+.balcore-explorer .period-note{display:none!important}
+.balcore-explorer .period-title{font-size:10px!important;color:var(--text3)!important;text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+.balcore-explorer .grid2{display:grid;grid-template-columns:1.1fr 1fr;gap:12px}
+.balcore-explorer .grid2>.card{margin:0!important}
+@media(max-width:900px){.balcore-explorer .grid2{grid-template-columns:1fr}
+}
+.balcore-explorer /* — vertical compression pass — */
+.hero{padding:15px 22px!important;align-items:center!important}
+.balcore-explorer .hero h1{font-size:clamp(19px,2.3vw,25px)!important;line-height:1.12!important}
+.balcore-explorer .hero p{margin-top:5px!important;font-size:12.5px!important;max-width:720px!important}
+.balcore-explorer .eyebrow{margin-bottom:5px!important;font-size:10px!important}
+.balcore-explorer .tabs{margin:12px 0 10px!important}
+.balcore-explorer .tab{padding:7px 14px!important}
+.balcore-explorer .section{margin-top:16px!important}
+.balcore-explorer .section-head{margin-bottom:9px!important}
+.balcore-explorer .period-row{display:none!important}
+.balcore-explorer .actions .period-controls{display:inline-flex;align-items:center;gap:5px}
+.balcore-explorer .actions .period-select{max-width:150px}
+.balcore-explorer .epoch-strip{display:flex;flex-wrap:wrap;align-items:center;gap:9px 18px;margin:0 0 12px;padding:10px 15px;border:1px solid rgba(141,124,247,.32);border-radius:12px;background:linear-gradient(120deg,rgba(141,124,247,.09),rgba(15,15,25,.5))}
+.balcore-explorer .ep-badge{display:inline-flex;align-items:center;gap:7px;font:800 10px var(--mono);letter-spacing:.1em;color:var(--violet2)}
+.balcore-explorer .ep-range{font-size:11px;color:var(--text3)}
+.balcore-explorer .ep-stats{display:flex;flex-wrap:wrap;gap:6px 20px;margin-left:auto;font-size:11px;color:var(--text3)}
+.balcore-explorer .ep-stats b{font:700 12px var(--mono);color:var(--text);margin:0 3px}
+.balcore-explorer .ep-stats b.pending{color:var(--gold);font-size:11px}
+@media(max-width:900px){.balcore-explorer .ep-stats{margin-left:0}
+}
+.balcore-explorer .debt-card{display:grid;grid-template-columns:1.05fr 1.3fr 1fr;gap:20px;align-items:center;margin-bottom:13px;padding:15px 18px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(145deg,var(--panel),#10101a)}
+.balcore-explorer .debt-col .l{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text2)}
+.balcore-explorer .debt-col .v{font:800 20px var(--mono);margin-top:5px}
+.balcore-explorer .debt-venues{margin-top:7px;display:grid;gap:3px;font-size:11px;color:var(--text3)}
+.balcore-explorer .debt-venues b{font-family:var(--mono);color:var(--text2);font-weight:600}
+.balcore-explorer .hf-scale{position:relative;height:9px;border-radius:6px;margin:13px 2px 20px;background:linear-gradient(90deg,#ef6a6a 0%,#ef6a6a 24%,#f3b850 24%,#f3b850 40%,var(--mint) 40%)}
+.balcore-explorer .hf-mark{position:absolute;top:-5px;width:3px;height:19px;border-radius:2px;background:#fff;box-shadow:0 0 8px rgba(255,255,255,.5)}
+.balcore-explorer .hf-lab{position:absolute;top:14px;transform:translateX(-50%);font:700 9px var(--mono);color:var(--text3);white-space:nowrap}
+.balcore-explorer .hf-now{position:absolute;top:-21px;transform:translateX(-50%);font:800 11px var(--mono);color:var(--mint);white-space:nowrap}
+.balcore-explorer .debt-note{font-size:11px;color:var(--text3);line-height:1.55}
+.balcore-explorer .debt-note b{color:var(--text2)}
+@media(max-width:1050px){.balcore-explorer .debt-card{grid-template-columns:1fr}
+}
+.balcore-explorer .hero-custody{margin-top:9px;display:flex;gap:8px;align-items:flex-start;max-width:740px;font-size:12px;line-height:1.55;color:var(--text3)}
+.balcore-explorer .hero-custody svg{flex:none;margin-top:1px;color:var(--mint)}
+.balcore-explorer .hero-custody b{color:var(--text2)}
+.balcore-explorer .hero p{max-width:980px!important}
+.balcore-explorer .hero-custody{max-width:980px}
+.balcore-explorer .summary-card{background:linear-gradient(150deg,#161622 0%,#101019 55%,#0e0e16 100%)!important;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+.balcore-explorer .summary-card:hover{transform:translateY(-3px);border-color:rgba(141,124,247,.32)!important;box-shadow:0 12px 28px rgba(0,0,0,.38),0 0 0 1px rgba(141,124,247,.06)}
+.balcore-explorer .debt-card{grid-template-columns:1.4fr 1.2fr 1fr!important}
+.balcore-explorer .debt-sub{color:var(--text3);font-size:10.5px;padding-left:2px;margin:-1px 0 3px}
+.balcore-explorer .debt-sub b{color:var(--text3)}
+.balcore-explorer .money-top{align-items:flex-start}
+.balcore-explorer .difference{align-self:flex-start;display:inline-flex;align-items:center;line-height:1}
+.balcore-explorer /* — final polish pass — */
+:focus-visible{outline:2px solid var(--violet2);outline-offset:2px;border-radius:6px}
+.balcore-explorer .tab:focus-visible,.balcore-explorer .btn:focus-visible,.balcore-explorer .range button:focus-visible{outline-offset:1px}
+.balcore-explorer ::selection{background:rgba(141,124,247,.35);color:#fff}
+.balcore-explorer, .balcore-explorer *{scrollbar-width:thin;scrollbar-color:#2a2a3e transparent}
+.balcore-explorer ::-webkit-scrollbar{width:9px;height:9px}
+.balcore-explorer ::-webkit-scrollbar-thumb{background:#262638;border-radius:6px;border:2px solid var(--bg)}
+.balcore-explorer ::-webkit-scrollbar-thumb:hover{background:#33334a}
+@media (prefers-reduced-motion: reduce){.balcore-explorer, .balcore-explorer *,.balcore-explorer *::before,.balcore-explorer *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+.balcore-explorer .live-dot{animation:none!important}
+
+}
+.balcore-explorer /* — 10/10 reliability and trust pass — */
+.prototype-note{display:flex;align-items:center;gap:8px;margin-top:11px;padding:8px 10px;border:1px solid rgba(243,184,80,.24);border-radius:9px;background:rgba(243,184,80,.07);color:var(--text3);font-size:10.5px;line-height:1.45}
+.balcore-explorer .prototype-note b{color:var(--gold)}
+.balcore-explorer .prototype-note:before{content:'';flex:none;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 4px rgba(243,184,80,.08)}
+.balcore-explorer .chain-actions{justify-self:end;display:flex;align-items:center;gap:7px}
+.balcore-explorer .live-control{height:32px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text2);cursor:pointer;font:750 9.5px var(--mono)}
+.balcore-explorer .live-control:hover{border-color:rgba(141,124,247,.52);color:var(--text)}
+.balcore-explorer .live-control.paused{color:var(--gold);border-color:rgba(243,184,80,.32);background:var(--goldSoft)}
+.balcore-explorer .data-status{display:flex;align-items:center;gap:7px;margin-left:auto;color:var(--text3);font:9.5px var(--mono);white-space:nowrap}
+.balcore-explorer .data-status b{color:var(--mint);font-weight:750}
+.balcore-explorer .section-anchor{scroll-margin-top:105px}
+.balcore-explorer .tab[aria-selected="true"]{cursor:default}
+.balcore-explorer .tab-panel:focus{outline:none}
+.balcore-explorer .kpi[role="button"],.balcore-explorer .summary-card[data-action],.balcore-explorer .card[role="button"]{position:relative}
+.balcore-explorer .kpi[role="button"]:active,.balcore-explorer .card[role="button"]:active{transform:translateY(0)}
+.balcore-explorer .summary-card .delta{display:inline-flex;margin-top:7px;padding:3px 7px;border-radius:6px;background:var(--mintSoft);color:var(--mint);font:750 9px var(--mono)}
+.balcore-explorer .summary-card .delta.neutral{background:var(--violetSoft);color:var(--violet2)}
+.balcore-explorer .search-help{position:absolute;right:10px;top:12px;color:var(--text3);font:8.5px var(--mono);pointer-events:none}
+.balcore-explorer .search input{padding-right:56px}
+.balcore-explorer .drawer[aria-hidden="true"]{visibility:hidden}
+.balcore-explorer .drawer[aria-hidden="false"]{visibility:visible}
+@media(max-width:900px){.balcore-explorer .chain-actions{justify-self:end}
+.balcore-explorer .data-status{width:100%;margin:3px 0 0}
+.balcore-explorer .topbar{align-items:start}
+}
+@media(max-width:620px){.balcore-explorer .chain-actions{gap:5px}
+.balcore-explorer .live-control{font-size:0;width:34px;padding:0}
+.balcore-explorer .live-control:after{content:'Ⅱ';font-size:11px}
+.balcore-explorer .live-control.paused:after{content:'▶'}
+.balcore-explorer .prototype-note{font-size:9.8px}
+.balcore-explorer .actions{gap:6px}
+.balcore-explorer .actions>.btn{flex:1}
+.balcore-explorer .period-controls{flex:1}
+.balcore-explorer .period-select{width:100%;max-width:none!important}
+.balcore-explorer .liquidity-overview-head{display:block}
+.balcore-explorer .liquidity-overview-head .difference{margin-top:9px}
+.balcore-explorer .reserve-mix{min-width:190px}
+}
+.balcore-explorer .card-more{margin-top:12px}
+.balcore-explorer .card-more>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font:700 10.5px var(--mono);letter-spacing:.06em;color:var(--violet2);padding:6px 12px;border:1px solid var(--line2);border-radius:8px;background:rgba(141,124,247,.07);transition:background .15s}
+.balcore-explorer .card-more>summary::-webkit-details-marker{display:none}
+.balcore-explorer .card-more>summary:hover{background:rgba(141,124,247,.14)}
+.balcore-explorer .card-more>summary::after{content:'▾';font-size:10px;transition:transform .18s}
+.balcore-explorer .card-more[open]>summary::after{transform:rotate(180deg)}
+.balcore-explorer .card-more .more-body{margin-top:12px}
+.balcore-explorer .tok{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:500}
+.balcore-explorer .mono-sub{font-family:var(--mono);font-size:9.5px;margin-top:3px}
+
