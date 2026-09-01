@@ -116,7 +116,7 @@ function allocate(
 ): PeriodRecord[] {
   const acc = { il: 0, dist: 0 };
   return defs.map((d, i) => {
-    const r = { ...d, fees: fees[i], tvl: 24600000, il: 0, dist: 0 };
+    const r = { ...d, fees: fees[i] ?? 0, tvl: 24600000, il: 0, dist: 0 };
     if (i === defs.length - 1) {
       r.il = total.il - acc.il;
       r.dist = total.dist - acc.dist;
