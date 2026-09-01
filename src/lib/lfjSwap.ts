@@ -71,6 +71,27 @@ export const lbRouterAbi = [
   },
   {
     type: "function",
+    name: "swapExactTokensForTokens",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "amountIn", type: "uint256" },
+      { name: "amountOutMin", type: "uint256" },
+      {
+        name: "path",
+        type: "tuple",
+        components: [
+          { name: "pairBinSteps", type: "uint256[]" },
+          { name: "versions", type: "uint8[]" },
+          { name: "tokenPath", type: "address[]" },
+        ],
+      },
+      { name: "to", type: "address" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [{ name: "amountOut", type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "swapExactTokensForNATIVE",
     stateMutability: "nonpayable",
     inputs: [

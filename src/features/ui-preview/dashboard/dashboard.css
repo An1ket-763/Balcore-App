@@ -869,6 +869,10 @@ html[data-theme="light"] .lead-you-k{border-color:rgba(91,72,214,.45);background
 .swap-max:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 /* ===== swap: best-route scan + slippage ===== */
 .route-opt.is-best{border-color:rgba(46,230,168,.45)}
+.route-opt.is-best:not(.on){border-color:var(--line-soft);box-shadow:inset 2px 0 0 var(--mint)}
+.route-opt.is-best:not(.on) .route-out{color:var(--mint)}
+.route-opt:disabled{cursor:default;opacity:.55}
+.route-opt:disabled:hover{border-color:var(--line-soft)}
 .route-list.scanning .route-opt{opacity:.4;pointer-events:none;transition:opacity .12s var(--ease),border-color .12s var(--ease),box-shadow .12s var(--ease),transform .12s var(--ease)}
 .route-list.scanning .route-opt.scan-hit{opacity:1;border-color:rgba(46,230,168,.6);box-shadow:0 0 0 1px rgba(46,230,168,.25),0 0 16px -5px rgba(46,230,168,.55);transform:translateX(2px)}
 @media (prefers-reduced-motion:reduce){.route-list.scanning .route-opt{transition:none}.route-list.scanning .route-opt.scan-hit{transform:none}}
@@ -896,6 +900,14 @@ html[data-theme="light"] .lead-you-k{border-color:rgba(91,72,214,.45);background
 .token-menu .coin{width:22px;height:22px;font-size:11px;border-width:1.5px;flex-shrink:0}
 .tmi-name{font-weight:600}
 .tmi-sym{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--text-3)}
+/* the original menu was positioned by the old imperative script; anchor it to
+   the pill instead so it follows the button inside the modal */
+.token-pick-wrap{position:relative;flex-shrink:0}
+.token-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:216px}
+/* coin badges for the tokens added alongside AVAX/USDC/BTC */
+.c-usdt{background:#26a17b;color:#fff}
+.c-eth{background:#627eea;color:#fff}
+.c-savax{background:#17b3c3;color:#fff}
 /* ===== swap details: price line + show details ===== */
 .swap-details{margin:9px 0 1px}
 .swap-det-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
