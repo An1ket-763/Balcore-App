@@ -1,17 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useAccount,
+  useEstimateFeesPerGas,
+  usePublicClient,
   useReadContract,
   useSendTransaction,
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-import { formatUnits, type Address, type Hex } from "viem";
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  ExecutionRevertedError,
+  formatUnits,
+  type Address,
+  type Hex,
+} from "viem";
 import { LOGO } from "../logo";
 import { LFJ_ICON } from "../lfjIcon";
-import { balanceOf, useSwapBalances } from "../data/swapBalances";
+import { balanceOf, rawBalanceOf, useSwapBalances } from "../data/swapBalances";
 import { getTokenPrices } from "../data/prices";
 import { useRouteQuotes, type RouteId, type RouteQuote } from "../data/swapQuote";
+import { gasReserveWei, portionOf, spendableNative } from "@/lib/gasReserve";
 import { defaultChain, isMainnet } from "@/lib/wagmi";
 import { LB_ROUTER_ADDRESS, erc20ApprovalAbi, lbRouterAbi, swapDeadline } from "@/lib/lfjSwap";
 import { PHARAOH_SWAP_ROUTER, buildPharaohSwap, pharaohRouterAbi } from "@/lib/pharaohSwap";
@@ -63,10 +73,23 @@ function closeSwapOverlay() {
 
 type Side = "in" | "out";
 
+/** The wagmi-configured read client, once it exists. */
+type ChainClient = NonNullable<ReturnType<typeof usePublicClient>>;
+
+/**
+ * A swap that has been fully built but not yet signed, split so the same call
+ * can be dry-run against the chain and then sent through the wallet.
+ */
+interface RoutePlan {
+  simulate: (client: ChainClient) => Promise<unknown>;
+  send: () => Promise<Hex>;
+}
+
 export default function SwapPanel() {
   const { address, isConnected, chain } = useAccount();
-  const { balances, isLoading: balancesLoading } = useSwapBalances();
+  const { balances, raw: rawBalances, isLoading: balancesLoading } = useSwapBalances();
   const prices = getTokenPrices();
+  const publicClient = usePublicClient({ chainId: defaultChain.id });
 
   const [tokenIn, setTokenIn] = useState<SwapToken>(USDC);
   const [tokenOut, setTokenOut] = useState<SwapToken>(AVAX);
@@ -106,7 +129,32 @@ export default function SwapPanel() {
 
   const typedAmount = Number((amountIn || "").replace(/,/g, "")) || 0;
   const fromBalance = balanceOf(balances, tokenIn);
-  const exceedsBalance = typedAmount > 0 && typedAmount > fromBalance;
+  const fromBalanceWei = rawBalanceOf(rawBalances, tokenIn);
+
+  // ---- native gas reserve ----
+  // Spending the whole AVAX balance can never work: the swap sends it as
+  // `value`, leaving nothing to pay the fee with. Reserve a fee-aware slice.
+  const fees = useEstimateFeesPerGas({
+    chainId: defaultChain.id,
+    query: { enabled: isConnected, refetchInterval: 30_000 },
+  });
+  const gasReserve = useMemo(
+    () => gasReserveWei(fees.data?.maxFeePerGas ?? fees.data?.gasPrice ?? null),
+    [fees.data],
+  );
+  /** What the selected input token can actually put into a swap. */
+  const spendableWei = tokenIn.native
+    ? spendableNative(fromBalanceWei, gasReserve)
+    : fromBalanceWei;
+
+  // Compared in the token's own units, so an 18-decimal amount is not judged
+  // through a float that has already lost the low-order digits.
+  const exceedsBalance = amountInWei > 0n && amountInWei > fromBalanceWei;
+  const leavesNoGas =
+    tokenIn.native &&
+    amountInWei > 0n &&
+    amountInWei <= fromBalanceWei &&
+    amountInWei > spendableWei;
 
   const usdFor = (token: SwapToken): number | null =>
     token.priceKey ? (prices[token.priceKey]?.usd ?? null) : null;
@@ -248,14 +296,23 @@ export default function SwapPanel() {
     }
   }
 
+  /**
+   * Percentage buttons work in the token's smallest unit and floor.
+   *
+   * The float path this replaced rounded to 8 decimal places, which on an
+   * 18-decimal token can round UP past the real balance (1.234567895 becomes
+   * 1.23456790) and produce a Max the wallet cannot cover. For native AVAX the
+   * percentage is taken of the spendable balance, not the whole one, so Max
+   * still leaves enough behind to pay for its own gas.
+   */
   function setPct(pct: number) {
-    const amt = (fromBalance * pct) / 100;
-    if (amt <= 0) {
+    const amt = portionOf(spendableWei, pct);
+    if (amt <= 0n) {
       setAmountIn("");
+      setTxError(null);
       return;
     }
-    // Never offer more precision than the token actually has.
-    setAmountIn(String(Number(amt.toFixed(Math.min(tokenIn.decimals, 8)))));
+    setAmountIn(formatUnits(amt, tokenIn.decimals));
     setTxError(null);
   }
 
@@ -280,16 +337,42 @@ export default function SwapPanel() {
     setTxError(null);
     setPreparing(true);
     try {
-      const hash = await executeRoute(selected);
+      const plan = await prepareRoute(selected);
+      // Dry-run against the chain before the wallet ever opens. A route whose
+      // path has moved, whose pool has emptied, or whose allowance is short
+      // reverts here — costing nothing — instead of after the user has signed.
+      await simulate(plan);
+      const hash = await plan.send();
       setSwapHash(hash);
     } catch (e) {
-      setTxError(e instanceof Error ? shortError(e.message) : "Swap failed");
+      // A pre-flight failure already carries a specific, user-facing reason;
+      // shortError would flatten it back into "Transaction failed".
+      if (e instanceof PreflightError) setTxError(e.message);
+      else setTxError(e instanceof Error ? shortError(e.message) : "Swap failed");
     } finally {
       setPreparing(false);
     }
   }
 
-  async function executeRoute(route: RouteQuote): Promise<Hex> {
+  /**
+   * Run the prepared call as an `eth_call` first.
+   *
+   * Only a genuine revert blocks the swap. An unreachable or rate-limited RPC
+   * must not: the check exists to catch bad transactions, and turning it into
+   * a hard gate would make a flaky node look like a broken swap panel. In that
+   * case the wallet does its own estimate, exactly as it did before.
+   */
+  async function simulate(plan: RoutePlan): Promise<void> {
+    if (!publicClient) return;
+    try {
+      await plan.simulate(publicClient);
+    } catch (e) {
+      if (isRevert(e)) throw new PreflightError(revertMessage(e));
+      console.warn("[balcore] swap pre-flight skipped:", e);
+    }
+  }
+
+  async function prepareRoute(route: RouteQuote): Promise<RoutePlan> {
     const user = address as Address;
     const deadline = swapDeadline();
     const nativeValue = tokenIn.native ? amountInWei : 0n;
@@ -302,31 +385,43 @@ export default function SwapPanel() {
         tokenPath: [...route.lfjPath.tokenPath],
       } as const;
       if (tokenIn.native) {
-        return contractSwap.writeContractAsync({
+        const params = {
           abi: lbRouterAbi,
           address: LB_ROUTER_ADDRESS,
           functionName: "swapExactNATIVEForTokens",
           args: [minOutWei, path, user, deadline],
           value: amountInWei,
           chainId: defaultChain.id,
-        });
+        } as const;
+        return {
+          simulate: (client) => client.simulateContract({ ...params, account: user }),
+          send: () => contractSwap.writeContractAsync(params),
+        };
       }
       if (tokenOut.native) {
-        return contractSwap.writeContractAsync({
+        const params = {
           abi: lbRouterAbi,
           address: LB_ROUTER_ADDRESS,
           functionName: "swapExactTokensForNATIVE",
           args: [amountInWei, minOutWei, path, user, deadline],
           chainId: defaultChain.id,
-        });
+        } as const;
+        return {
+          simulate: (client) => client.simulateContract({ ...params, account: user }),
+          send: () => contractSwap.writeContractAsync(params),
+        };
       }
-      return contractSwap.writeContractAsync({
+      const params = {
         abi: lbRouterAbi,
         address: LB_ROUTER_ADDRESS,
         functionName: "swapExactTokensForTokens",
         args: [amountInWei, minOutWei, path, user, deadline],
         chainId: defaultChain.id,
-      });
+      } as const;
+      return {
+        simulate: (client) => client.simulateContract({ ...params, account: user }),
+        send: () => contractSwap.writeContractAsync(params),
+      };
     }
 
     if (route.id === "pharaoh") {
@@ -342,25 +437,37 @@ export default function SwapPanel() {
         unwrapToNative: tokenOut.native,
       });
       if (call.functionName === "multicall") {
-        return contractSwap.writeContractAsync({
+        const params = {
           abi: pharaohRouterAbi,
           address: PHARAOH_SWAP_ROUTER,
           functionName: "multicall",
           args: call.args,
           value: nativeValue,
           chainId: defaultChain.id,
-        });
+        } as const;
+        return {
+          simulate: (client) => client.simulateContract({ ...params, account: user }),
+          send: () => contractSwap.writeContractAsync(params),
+        };
       }
-      return contractSwap.writeContractAsync({
+      const params = {
         abi: pharaohRouterAbi,
         address: PHARAOH_SWAP_ROUTER,
         functionName: "exactInputSingle",
         args: call.args,
         value: nativeValue,
         chainId: defaultChain.id,
-      });
+      } as const;
+      return {
+        simulate: (client) => client.simulateContract({ ...params, account: user }),
+        send: () => contractSwap.writeContractAsync(params),
+      };
     }
 
+    // Both aggregators hand back raw calldata, so the dry run is a plain
+    // eth_call rather than a typed contract simulation. Note the tx is
+    // assembled fresh here, not reused from quote time — an expired
+    // routeSummary or pathId fails at the API with its own message.
     if (route.id === "kyber") {
       if (!route.kyber) throw new Error("KyberSwap route expired");
       const tx = await buildKyberTx({
@@ -372,24 +479,31 @@ export default function SwapPanel() {
         deadline,
         nativeValue,
       });
-      return rawSwap.sendTransactionAsync({
-        to: tx.to,
-        data: tx.data,
-        value: tx.value,
-        ...(tx.gas ? { gas: tx.gas } : {}),
-        chainId: defaultChain.id,
-      });
+      return rawPlan(tx, user);
     }
 
     if (!route.odos) throw new Error("Odos route expired");
     const tx = await assembleOdosTx({ pathId: route.odos.pathId, userAddr: user });
-    return rawSwap.sendTransactionAsync({
-      to: tx.to,
-      data: tx.data,
-      value: tx.value,
-      ...(tx.gas ? { gas: tx.gas } : {}),
-      chainId: defaultChain.id,
-    });
+    return rawPlan(tx, user);
+  }
+
+  /** Shared plan for the two aggregators, which both return ready calldata. */
+  function rawPlan(
+    tx: { to: Address; data: Hex; value: bigint; gas?: bigint },
+    user: Address,
+  ): RoutePlan {
+    return {
+      simulate: (client) =>
+        client.call({ account: user, to: tx.to, data: tx.data, value: tx.value }),
+      send: () =>
+        rawSwap.sendTransactionAsync({
+          to: tx.to,
+          data: tx.data,
+          value: tx.value,
+          ...(tx.gas ? { gas: tx.gas } : {}),
+          chainId: defaultChain.id,
+        }),
+    };
   }
 
   // ---- CTA state machine ----
@@ -423,6 +537,12 @@ export default function SwapPanel() {
     ctaAction = null;
   } else if (exceedsBalance) {
     ctaLabel = `Amount exceeds ${tokenIn.symbol} balance`;
+    ctaDisabled = true;
+    ctaAction = null;
+  } else if (leavesNoGas) {
+    // Spending this much AVAX would leave nothing to pay the fee with, so the
+    // transaction cannot be signed however good the quote is.
+    ctaLabel = `Leave ~${formatTokenAmount(AVAX, Number(formatUnits(gasReserve, 18)))} AVAX for gas`;
     ctaDisabled = true;
     ctaAction = null;
   } else if (txError) {
@@ -545,11 +665,30 @@ export default function SwapPanel() {
               </div>
               <div className="swap-pct" id="swapPct">
                 {[25, 50, 75, 100].map((p) => (
-                  <button key={p} className="swap-pct-btn" type="button" onClick={() => setPct(p)}>
+                  <button
+                    key={p}
+                    className="swap-pct-btn"
+                    type="button"
+                    onClick={() => setPct(p)}
+                    title={
+                      p === 100 && tokenIn.native
+                        ? `Leaves ~${formatTokenAmount(AVAX, Number(formatUnits(gasReserve, 18)))} AVAX for gas`
+                        : undefined
+                    }
+                  >
                     {p === 100 ? "Max" : `${p}%`}
                   </button>
                 ))}
               </div>
+              {tokenIn.native && fromBalanceWei > 0n && (
+                <div
+                  className="swap-field-note"
+                  style={{ color: "var(--text-2)", fontSize: "11px" }}
+                >
+                  Max keeps ~{formatTokenAmount(AVAX, Number(formatUnits(gasReserve, 18)))} AVAX
+                  back for gas.
+                </div>
+              )}
               <div className="swap-field-row">
                 <input
                   id="swapFrom"
@@ -876,6 +1015,56 @@ export default function SwapPanel() {
       )}
     </div>
   );
+}
+
+/** A swap the chain rejected before it ever reached the wallet. */
+class PreflightError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PreflightError";
+  }
+}
+
+/**
+ * Did the chain reject this call, or did we simply fail to ask it?
+ *
+ * The distinction matters: a revert is a real reason to stop before the wallet
+ * opens, while a timeout or a rate-limited node is not — blocking on those
+ * would turn a flaky RPC into an unusable swap panel.
+ */
+function isRevert(err: unknown): boolean {
+  if (err instanceof BaseError) {
+    const reverted = err.walk(
+      (e) => e instanceof ContractFunctionRevertedError || e instanceof ExecutionRevertedError,
+    );
+    if (reverted) return true;
+  }
+  const msg = err instanceof Error ? err.message : "";
+  return /execution reverted|reverted with|InsufficientAmountOut|Too little received|TRANSFER_FROM_FAILED|STF|insufficient allowance|transfer amount exceeds/i.test(
+    msg,
+  );
+}
+
+/** Turn a simulated revert into something the CTA can actually say. */
+function revertMessage(err: unknown): string {
+  if (err instanceof BaseError) {
+    const reverted = err.walk((e) => e instanceof ContractFunctionRevertedError);
+    if (reverted instanceof ContractFunctionRevertedError) {
+      const name = reverted.data?.errorName ?? reverted.reason ?? "";
+      if (/InsufficientAmountOut|TooLittleReceived|Too little received/i.test(name)) {
+        return "Price moved — raise slippage and retry";
+      }
+      if (name) return `Swap would fail: ${name} — tap to retry`;
+    }
+  }
+  const msg = err instanceof Error ? err.message : "";
+  if (/insufficient allowance|TRANSFER_FROM_FAILED|STF/i.test(msg)) {
+    return "Approval is short — approve again and retry";
+  }
+  if (/transfer amount exceeds|insufficient balance/i.test(msg)) {
+    return "Balance moved — lower the amount and retry";
+  }
+  return "Swap would fail on-chain — tap to retry";
 }
 
 function shortError(msg: string) {
