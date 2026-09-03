@@ -27,6 +27,7 @@ import ProofDrawer, { type ProofConfig } from "./components/ProofDrawer";
 import ProvidersPanel, { PoolGrid, ProviderTable } from "./components/ProvidersPanel";
 import ReserveSection from "./components/ReserveSection";
 import Toast from "./components/Toast";
+import Topbar from "./components/Topbar";
 import WalletExplorer, { walletLiveData, type WalletMetric } from "./components/WalletExplorer";
 
 const RANGE_KEYS: RangeKey[] = ["1W", "1M", "6M", "1Y", "ALL"];
@@ -425,7 +426,7 @@ export default function ExplorerPage() {
       <div className="demo">
         <b>Prototype</b> — illustrative data, simulated live stream.
       </div>
-      <Topbarish
+      <Topbar
         block={live.block}
         paused={live.paused}
         onTogglePaused={() => {
@@ -622,6 +623,3 @@ export default function ExplorerPage() {
     </div>
   );
 }
-
-// Local alias keeps the topbar import close to where it is used.
-import Topbarish from "./components/Topbar";
