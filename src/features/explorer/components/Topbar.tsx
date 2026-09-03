@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { LOGO } from "@/features/ui-preview/dashboard/logo";
 
 export default function Topbar({
@@ -16,10 +15,6 @@ export default function Topbar({
   searchValue: string;
   onSearchValueChange: (v: string) => void;
 }) {
-  const [flash, setFlash] = useState(0);
-  // Re-trigger the block flash animation whenever the block advances.
-  if (flash !== block) setTimeout(() => setFlash(block), 0);
-
   return (
     <header className="topbar">
       <div className="brand">
