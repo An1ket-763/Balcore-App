@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
 import { shortenAddress } from "./walletUtils";
 import { defaultChain, explorerBase } from "@/lib/wagmi";
@@ -160,6 +161,40 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
             />
           </svg>
         </a>
+        <Link
+          className="wallet-menu-item"
+          to="/explorer"
+          role="menuitem"
+          title="Open the Balcore Explorer"
+          onClick={() => setOpen(false)}
+        >
+          <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
+            <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" strokeWidth="1.4" />
+            <path
+              d="M2.5 8.5h12M8.5 2.5c1.6 1.7 2.4 3.7 2.4 6s-.8 4.3-2.4 6c-1.6-1.7-2.4-3.7-2.4-6s.8-4.3 2.4-6Z"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Balcore Explorer
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 17 17"
+            fill="none"
+            style={{ marginLeft: "auto", opacity: ".5" }}
+          >
+            <path
+              d="M6 4.5 10 8.5 6 12.5"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </Link>
         <button
           className="wallet-menu-item danger"
           id="disconnectBtn"
