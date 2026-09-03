@@ -423,9 +423,6 @@ export default function ExplorerPage() {
 
   return (
     <div className="balcore-explorer">
-      <div className="demo">
-        <b>Prototype</b> — illustrative data, simulated live stream.
-      </div>
       <Topbar
         block={live.block}
         paused={live.paused}
