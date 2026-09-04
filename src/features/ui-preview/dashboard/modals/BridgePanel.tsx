@@ -1,4 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAccount } from "wagmi";
+import { formatUnits, parseUnits } from "viem";
+import {
+  AVALANCHE_CHAIN,
+  BRIDGE_LIVE,
+  USDC_DECIMALS,
+  chainByLabel,
+  etaLabel,
+  type BridgeChain,
+} from "@/lib/cctp";
+import { bridgeBalanceOf, formatUsdc, useBridgeBalances } from "../data/bridgeBalances";
+import { useBridgeFee } from "../data/bridgeFee";
+import { useBridgeBurn } from "../data/bridgeBurn";
+import { portionOf } from "@/lib/gasReserve";
 
 /**
  * Bridge modal.
@@ -37,26 +51,16 @@ const LOGOS: Record<string, string> = {
   NEAR: '<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#0f1014"/><polygon points="9.5,8.5 12.5,8.5 12.5,23.5 9.5,23.5" fill="#fff"/><polygon points="19.5,8.5 22.5,8.5 22.5,23.5 19.5,23.5" fill="#fff"/><polygon points="9.5,8.5 12.5,8.5 22.5,23.5 19.5,23.5" fill="#fff"/></svg>',
 };
 
-/** Illustrative fast-fee bps by source chain. Replaced by Circle's fee API later. */
-const FAST_BPS: Record<string, number> = {
-  Ethereum: 1,
-  Base: 1,
-  Arbitrum: 1,
-  "OP Mainnet": 1,
-  Polygon: 1,
-  Solana: 2,
-  Avalanche: 1,
-};
-
-/** Still the hardcoded figure from the original markup — replaced next step. */
-const MOCK_BALANCE = 14200;
-
 const CHIPS: { chain: string; label: string; soon?: string }[] = [
   { chain: "Ethereum", label: "Ethereum" },
   { chain: "Base", label: "Base" },
   { chain: "Arbitrum", label: "Arbitrum" },
   { chain: "Polygon", label: "Polygon" },
-  { chain: "Solana", label: "Solana" },
+  {
+    chain: "Solana",
+    label: "Solana",
+    soon: "Native USDC is live on Solana — route opens when Balcore adds a Solana wallet connection",
+  },
   {
     chain: "NEAR",
     label: "NEAR",
@@ -98,6 +102,8 @@ function ChainMark({ name, id }: { name: string; id?: string }) {
 }
 
 export default function BridgePanel() {
+  const { isConnected } = useAccount();
+  const { raw: balances, isLoading: balancesLoading } = useBridgeBalances();
   const [other, setOther] = useState("Ethereum");
   const [toAvax, setToAvax] = useState(true);
   const [speed, setSpeed] = useState<Speed>("fast");
@@ -114,9 +120,43 @@ export default function BridgePanel() {
   const fromChain = toAvax ? other : "Avalanche C-Chain";
   const toChain = toAvax ? "Avalanche C-Chain" : other;
   const srcLabel = toAvax ? other : "Avalanche";
+  const sourceLabelShort = toAvax ? other : "Avalanche";
   const dstLabel = toAvax ? "Avalanche" : other;
 
   const value = parseFloat((amount || "").replace(/,/g, "")) || 0;
+
+  /**
+   * The chain the USDC actually leaves from — which is what the balance,
+   * the percent buttons and (later) the burn all have to agree on.
+   */
+  const sourceChain: BridgeChain | null = toAvax ? chainByLabel(other) : AVALANCHE_CHAIN;
+  const sourceBalanceWei = bridgeBalanceOf(balances, sourceChain);
+  const destinationChain: BridgeChain | null = toAvax ? AVALANCHE_CHAIN : chainByLabel(other);
+
+  /** Typed amount in USDC's smallest unit; 0n if it isn't a valid number. */
+  const amountWei = useMemo(() => {
+    const clean = (amount || "").replace(/,/g, "").trim();
+    if (!clean) return 0n;
+    try {
+      const parsed = parseUnits(clean, USDC_DECIMALS);
+      return parsed > 0n ? parsed : 0n;
+    } catch {
+      return 0n;
+    }
+  }, [amount]);
+
+  // Compared in USDC's own units, never through a float.
+  const exceedsBalance = amountWei > 0n && amountWei > sourceBalanceWei;
+
+  /** Circle's live per-route fee, replacing the old fixed 1bp guess. */
+  const fee = useBridgeFee(sourceChain, destinationChain, speed, amountWei);
+
+  /**
+   * The real source-chain transaction. Always mounted so its reads (allowance,
+   * native gas) are warm, but only ever driven when BRIDGE_LIVE is armed —
+   * otherwise the panel keeps running the simulation below.
+   */
+  const burn = useBridgeBurn(sourceChain, destinationChain, amountWei, speed, fee.bps);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -156,44 +196,84 @@ export default function BridgePanel() {
   }
 
   // ---- quote ----
-  const fastFee = useMemo(() => {
-    if (speed !== "fast" || value <= 0) return null;
-    return Math.max((value * (FAST_BPS[srcLabel] ?? 1)) / 10000, 0.01);
-  }, [speed, value, srcLabel]);
-
+  /**
+   * What arrives, from Circle's live quote. The fee is deducted at mint time,
+   * so the amount entered is what leaves and this is what lands.
+   */
   const receiveText =
-    value > 0
-      ? speed === "fast"
-        ? `${money(value - (fastFee ?? 0))} USDC`
-        : `${money(value)} USDC`
-      : "—";
+    amountWei > 0n && fee.receiveWei !== null ? `${formatUsdc(fee.receiveWei)} USDC` : "—";
 
-  const feeText =
-    speed === "fast"
-      ? value > 0
-        ? `≈ ${(fastFee ?? 0).toFixed(2)} USDC · Fast Transfer`
-        : "Fast Transfer · quoted at bridge time"
-      : "None · Standard Transfer";
+  const feeText = (() => {
+    if (fee.isLoading) return "Checking Circle's rate…";
+    if (speed === "standard") {
+      // Circle quotes 0 bps for Standard on every route today, but the number
+      // is read rather than assumed in case a route ever starts charging.
+      return fee.bps === null || fee.bps === 0
+        ? "None · Standard Transfer"
+        : `≈ ${formatUsdc(fee.feeWei ?? 0n)} USDC · Standard Transfer`;
+    }
+    if (fee.bps === null) return "Fast Transfer rate unavailable";
+    if (amountWei <= 0n) return `Fast Transfer · ${fee.bps} bps on this route`;
+    return `≈ ${formatUsdc(fee.feeWei ?? 0n)} USDC · Fast Transfer`;
+  })();
 
-  const etaText =
-    speed === "fast"
-      ? "~30 seconds"
-      : srcLabel === "Ethereum"
-        ? "~15–20 minutes (finality)"
-        : "~1–5 minutes (finality)";
+  const etaText = sourceChain ? etaLabel(speed, sourceChain) : "—";
 
   const title = toAvax ? "Bridge USDC to Balcore" : "Bridge USDC out";
   const subtitle = toAvax
     ? "Bring USDC in from any chain — then deposit and start market making."
     : "Move USDC from Avalanche back to any supported chain. Your funds, your call.";
 
-  const ctaDisabled = value <= 0;
-  const ctaLabel =
-    value <= 0 ? "Enter an amount" : phase === "review" ? "Confirm bridge" : "Review bridge";
+  /**
+   * A Fast transfer we cannot price cannot be sent safely: the burn's `maxFee`
+   * comes from this quote, and guessing it either reverts the transaction or
+   * signs away an unbounded fee. Standard is free, so it is never blocked.
+   */
+  const feeBlocked = fee.blocksFast;
+
+  const ctaDisabled =
+    !isConnected ||
+    value <= 0 ||
+    exceedsBalance ||
+    fee.isLoading ||
+    feeBlocked ||
+    (BRIDGE_LIVE && (burn.noSourceGas || burn.isBusy));
+
+  const ctaLabel = !isConnected
+    ? "Connect your wallet"
+    : value <= 0
+      ? "Enter an amount"
+      : exceedsBalance
+        ? `Amount exceeds ${sourceLabelShort} USDC balance`
+        : fee.isLoading
+          ? "Checking Circle's rate…"
+          : feeBlocked
+            ? "Fast rate unavailable — try Standard"
+            : BRIDGE_LIVE
+              ? liveCtaLabel()
+              : phase === "review"
+                ? "Confirm bridge"
+                : "Review bridge";
+
+  /**
+   * Labels for the real path. The order matters: each one names the single
+   * next thing the user must do, rather than a generic "confirm".
+   */
+  function liveCtaLabel(): string {
+    if (burn.noSourceGas) return `No ${sourceLabelShort} gas to send this`;
+    if (burn.stage === "approving") return `Approving USDC on ${sourceLabelShort}…`;
+    if (burn.stage === "preparing") return "Checking the burn…";
+    if (burn.stage === "signing") return "Confirm in wallet…";
+    if (burn.stage === "confirming") return "Burning on-chain…";
+    if (burn.error) return burn.error;
+    if (burn.needsSwitch) return `Switch to ${sourceLabelShort}`;
+    if (burn.needsApproval) return `Approve USDC on ${sourceLabelShort}`;
+    return phase === "review" ? "Confirm burn" : "Review bridge";
+  }
 
   const reviewNote =
     phase === "review"
-      ? `Bridging ${money(value)} USDC · ${srcLabel} → ${dstLabel} · ${speed === "fast" ? "Fast ~30s" : "Standard"}`
+      ? `Bridging ${money(value)} USDC · ${srcLabel} → ${dstLabel} · ${speed === "fast" ? `Fast ${etaText}` : "Standard"}`
       : "";
 
   // ---- simulated burn → attest → mint ----
@@ -260,18 +340,72 @@ export default function BridgePanel() {
 
   function onCta() {
     if (ctaDisabled) return;
+
+    if (BRIDGE_LIVE) {
+      // Each click does exactly one thing, so the user always knows what they
+      // just authorised: switch, then approve, then review, then burn.
+      if (burn.needsSwitch) return burn.switchToSource();
+      if (burn.error) return void burn.reset();
+      if (burn.needsApproval) return void burn.approve();
+      if (phase === "edit") return setPhase("review");
+      setPhase("bridging");
+      void burn.burn();
+      return;
+    }
+
     if (phase === "edit") setPhase("review");
     else if (phase === "review") startBridge();
   }
 
+  /**
+   * Percentage of the real source-chain balance, floored in USDC's smallest
+   * unit. Same rule as the swap panel: never derive a spendable amount from a
+   * float, because rounding can land above the balance and revert.
+   *
+   * Note this does NOT reserve anything for gas — USDC is an ERC-20, so the
+   * burn's fee is paid in the source chain's native token, not out of this.
+   */
   function setPct(pct: number) {
-    const v = (MOCK_BALANCE * pct) / 100;
-    setAmount(String(Math.floor(v * 100) / 100));
+    const amt = portionOf(sourceBalanceWei, pct);
+    setAmount(amt > 0n ? formatUnits(amt, USDC_DECIMALS) : "");
     setActivePct(pct);
     touch();
   }
 
-  const bridging = phase === "bridging" || phase === "done";
+  /**
+   * Progress rows for the REAL path, derived from the burn's actual stage.
+   *
+   * Only the burn is implemented so far, so the attestation and mint rows stay
+   * pending. That is deliberately honest: claiming "Bridge complete" when the
+   * USDC has merely been destroyed on the source chain would be the single most
+   * dangerous thing this panel could say.
+   */
+  const liveSteps: Step[] = useMemo(() => {
+    const burning = burn.stage === "signing" || burn.stage === "confirming";
+    const done = burn.stage === "burned";
+    return [
+      {
+        title: `Burn on ${srcLabel}`,
+        sub: done
+          ? `tx ${burn.burnTxHash?.slice(0, 8)}…${burn.burnTxHash?.slice(-4)} · confirmed`
+          : burn.stage === "signing"
+            ? "Waiting for your signature…"
+            : "Submitting transaction…",
+        state: done ? "done" : burning ? "active" : "",
+      },
+      {
+        title: `Circle attestation${speed === "fast" ? " · Fast" : ""}`,
+        sub: done ? "Waiting for Circle to sign…" : "Queued",
+        state: done ? "active" : "",
+      },
+      { title: `Mint on ${dstLabel}`, sub: "Queued", state: "" },
+    ];
+  }, [burn.stage, burn.burnTxHash, srcLabel, dstLabel, speed]);
+
+  const shownSteps = BRIDGE_LIVE ? liveSteps : steps;
+  const bridging = BRIDGE_LIVE
+    ? phase === "bridging" || burn.stage === "burned"
+    : phase === "bridging" || phase === "done";
 
   return (
     <div className={`modal bridge-modal${bridging ? " bridging" : ""}`}>
@@ -360,8 +494,12 @@ export default function BridgePanel() {
           <span>Amount</span>
           <span>
             Balance:{" "}
-            <span className="mono" style={{ color: "var(--text-2)" }} id="brBal">
-              {MOCK_BALANCE.toLocaleString()} USDC
+            <span
+              className={`mono${balancesLoading ? " is-loading" : ""}`}
+              style={{ color: "var(--text-2)" }}
+              id="brBal"
+            >
+              {formatUsdc(sourceBalanceWei)} USDC
             </span>
           </span>
         </div>
@@ -413,7 +551,7 @@ export default function BridgePanel() {
             </svg>
             Fast
           </div>
-          <div className="bs-s">~30 seconds · small fee</div>
+          <div className="bs-s">~8–20 seconds · small fee</div>
         </button>
         <button
           className={`br-speed-opt${speed === "standard" ? " on" : ""}`}
@@ -481,7 +619,7 @@ export default function BridgePanel() {
 
       <div className="br-progress" id="brProgress" hidden={!bridging} aria-live="polite">
         <div id="brSteps">
-          {steps.map((step, i) => (
+          {shownSteps.map((step, i) => (
             <div className={`br-step${step.state ? ` ${step.state}` : ""}`} data-i={i} key={i}>
               <span className="st-ic">
                 <span className="st-slot">
@@ -509,7 +647,13 @@ export default function BridgePanel() {
             </div>
           ))}
         </div>
-        <div className="br-done" id="brDone" hidden={phase !== "done"}>
+        {BRIDGE_LIVE && burn.stage === "burned" && (
+          <div className="br-review" id="brBurnedNote">
+            Your USDC has been burned on {srcLabel} and is now in Circle's hands. Completing the
+            transfer on {dstLabel} is not wired up yet — keep this transaction hash.
+          </div>
+        )}
+        <div className="br-done" id="brDone" hidden={BRIDGE_LIVE || phase !== "done"}>
           <div className="bd-ic">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path

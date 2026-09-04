@@ -41,6 +41,23 @@ export const CCTP_DOMAIN = {
 
 export type CctpDomain = (typeof CCTP_DOMAIN)[keyof typeof CCTP_DOMAIN];
 
+/**
+ * USDC is 6 decimals on every chain Circle issues it natively, so the bridge
+ * does not spend a round-trip reading `decimals()` per chain. If a future
+ * route ever breaks that assumption, read it rather than widening this.
+ */
+export const USDC_DECIMALS = 6;
+
+/**
+ * Arms the REAL burn/mint path. Off unless VITE_BRIDGE_LIVE=true.
+ *
+ * The bridge is being built in stages and the burn destroys USDC before the
+ * mint exists to recreate it. Until the whole path is finished, shipping the
+ * real burn would let a user strand their own funds mid-flight, so the panel
+ * keeps running its simulation and this flag is what switches it over.
+ */
+export const BRIDGE_LIVE = import.meta.env["VITE_BRIDGE_LIVE"] === "true";
+
 /* ------------------------------------------------------------------ */
 /* Contracts                                                           */
 /* ------------------------------------------------------------------ */

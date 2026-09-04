@@ -11,7 +11,6 @@ import {
 import {
   BaseError,
   ContractFunctionRevertedError,
-  ExecutionRevertedError,
   formatUnits,
   type Address,
   type Hex,
@@ -22,6 +21,7 @@ import { balanceOf, rawBalanceOf, useSwapBalances } from "../data/swapBalances";
 import { getTokenPrices } from "../data/prices";
 import { useRouteQuotes, type RouteId, type RouteQuote } from "../data/swapQuote";
 import { gasReserveWei, portionOf, spendableNative } from "@/lib/gasReserve";
+import { PreflightError, isRevert } from "@/lib/txPreflight";
 import { defaultChain, isMainnet } from "@/lib/wagmi";
 import { LB_ROUTER_ADDRESS, erc20ApprovalAbi, lbRouterAbi, swapDeadline } from "@/lib/lfjSwap";
 import { PHARAOH_SWAP_ROUTER, buildPharaohSwap, pharaohRouterAbi } from "@/lib/pharaohSwap";
@@ -1014,34 +1014,6 @@ export default function SwapPanel() {
         </div>
       )}
     </div>
-  );
-}
-
-/** A swap the chain rejected before it ever reached the wallet. */
-class PreflightError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "PreflightError";
-  }
-}
-
-/**
- * Did the chain reject this call, or did we simply fail to ask it?
- *
- * The distinction matters: a revert is a real reason to stop before the wallet
- * opens, while a timeout or a rate-limited node is not — blocking on those
- * would turn a flaky RPC into an unusable swap panel.
- */
-function isRevert(err: unknown): boolean {
-  if (err instanceof BaseError) {
-    const reverted = err.walk(
-      (e) => e instanceof ContractFunctionRevertedError || e instanceof ExecutionRevertedError,
-    );
-    if (reverted) return true;
-  }
-  const msg = err instanceof Error ? err.message : "";
-  return /execution reverted|reverted with|InsufficientAmountOut|Too little received|TRANSFER_FROM_FAILED|STF|insufficient allowance|transfer amount exceeds/i.test(
-    msg,
   );
 }
 
