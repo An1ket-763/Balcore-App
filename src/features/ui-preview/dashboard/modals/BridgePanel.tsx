@@ -5,13 +5,18 @@ import {
   AVALANCHE_CHAIN,
   BRIDGE_LIVE,
   USDC_DECIMALS,
+  chainByKey,
   chainByLabel,
   etaLabel,
+  txUrl,
   type BridgeChain,
 } from "@/lib/cctp";
 import { bridgeBalanceOf, formatUsdc, useBridgeBalances } from "../data/bridgeBalances";
 import { useBridgeFee } from "../data/bridgeFee";
 import { useBridgeBurn } from "../data/bridgeBurn";
+import { useBridgeTransfers, type PendingTransfer } from "../data/bridgeTransfers";
+import { useBridgeAttestation, useBurnReceiptWatch } from "../data/bridgeAttestation";
+import { useBridgeMint } from "../data/bridgeMint";
 import { portionOf } from "@/lib/gasReserve";
 
 /**
@@ -102,7 +107,7 @@ function ChainMark({ name, id }: { name: string; id?: string }) {
 }
 
 export default function BridgePanel() {
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { raw: balances, isLoading: balancesLoading } = useBridgeBalances();
   const [other, setOther] = useState("Ethereum");
   const [toAvax, setToAvax] = useState(true);
@@ -157,6 +162,116 @@ export default function BridgePanel() {
    * otherwise the panel keeps running the simulation below.
    */
   const burn = useBridgeBurn(sourceChain, destinationChain, amountWei, speed, fee.bps);
+
+  // ---- in-flight transfers ----
+  const { active, justMinted, canPersist, save, patch, drop } = useBridgeTransfers(address);
+
+  /**
+   * Write the transfer down the instant a burn hash exists — before waiting for
+   * it to be mined. From this moment the USDC is on its way out and the hash is
+   * the only handle on it, so it must survive a refresh from here on.
+   */
+  useEffect(() => {
+    if (!BRIDGE_LIVE || !burn.burnTxHash || !sourceChain || !destinationChain) return;
+    save({
+      burnTxHash: burn.burnTxHash,
+      sourceKey: sourceChain.key,
+      destinationKey: destinationChain.key,
+      sourceDomain: sourceChain.domain,
+      destinationDomain: destinationChain.domain,
+      amount: amountWei.toString(),
+      speed,
+      status: burn.stage === "burned" ? "attesting" : "burning",
+      // This effect fires twice — once for the hash, once when the burn is
+      // mined. Keeping the original timestamp matters: restarting the clock
+      // would stop a genuinely stuck transfer from ever reporting itself.
+      createdAt: active?.burnTxHash === burn.burnTxHash ? active.createdAt : Date.now(),
+    });
+    // Only the hash and the confirmed stage should retrigger this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [burn.burnTxHash, burn.stage]);
+
+  const onSigned = useCallback(
+    (hash: `0x${string}`, message: `0x${string}`, attestation: `0x${string}`) => {
+      patch(hash, { message, attestation, status: "ready" });
+    },
+    [patch],
+  );
+
+  const attestation = useBridgeAttestation(BRIDGE_LIVE ? active : null, onSigned);
+
+  // After a refresh nothing else is checking whether the burn actually
+  // succeeded. A reverted burn must stop pretending funds are in flight.
+  useBurnReceiptWatch(
+    BRIDGE_LIVE ? active : null,
+    useCallback((hash: `0x${string}`) => patch(hash, { status: "attesting" }), [patch]),
+    useCallback((hash: `0x${string}`) => patch(hash, { status: "failed" }), [patch]),
+  );
+
+  /**
+   * How long the current transfer has been waiting, so a genuinely stuck one
+   * can say something more useful than "waiting" forever.
+   */
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!BRIDGE_LIVE || !active) return;
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, [active]);
+  const waitingMinutes = active ? Math.floor((now - active.createdAt) / 60_000) : 0;
+  /** Well past even Ethereum's finality window — something is wrong. */
+  const stalled = Boolean(
+    active && active.status !== "ready" && active.status !== "failed" && waitingMinutes >= 30,
+  );
+
+  /**
+   * A minted transfer drops out of `active`, so keep the last one around until
+   * the user dismisses it — otherwise the confirmation screen would have
+   * nothing to show the moment it appeared.
+   */
+  const [settled, setSettled] = useState<PendingTransfer | null>(null);
+  /** Discarding forgets a record permanently, so it takes two taps. */
+  const [discardArmed, setDiscardArmed] = useState(false);
+
+  const onMinted = useCallback(
+    (hash: `0x${string}`, mintTxHash: `0x${string}` | null) => {
+      if (active) {
+        setSettled({
+          ...active,
+          status: "minted",
+          ...(mintTxHash ? { mintTxHash } : {}),
+        });
+      }
+      patch(hash, mintTxHash ? { status: "minted", mintTxHash } : { status: "minted" });
+    },
+    [patch, active],
+  );
+
+  /** The destination-chain claim. Only meaningful once Circle has signed. */
+  const mint = useBridgeMint(BRIDGE_LIVE ? active : null, onMinted);
+
+  /** What the progress area is describing: in-flight, or just finished. */
+  const shown = active ?? settled ?? justMinted;
+
+  /**
+   * Put the panel back to a blank, usable state.
+   *
+   * Dropping the stored record is not enough on its own: the burn and mint
+   * hooks keep their own stage, and `phase` still says "bridging". Leaving any
+   * of those behind strands the panel on a disabled "claimed" button until the
+   * page is reloaded — which is the HAPPY path, so it has to be complete.
+   */
+  const clearFinished = useCallback(() => {
+    if (shown) drop(shown.burnTxHash);
+    setSettled(null);
+    setDiscardArmed(false);
+    mint.reset();
+    burn.reset();
+    setPhase("edit");
+    setSteps([]);
+    setAmount("");
+    setActivePct(null);
+  }, [shown, drop, mint, burn]);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -231,35 +346,70 @@ export default function BridgePanel() {
    */
   const feeBlocked = fee.blocksFast;
 
-  const ctaDisabled =
-    !isConnected ||
-    value <= 0 ||
-    exceedsBalance ||
-    fee.isLoading ||
-    feeBlocked ||
-    (BRIDGE_LIVE && (burn.noSourceGas || burn.isBusy));
+  /**
+   * A transfer waiting to be claimed takes over the whole button.
+   *
+   * The user's money is already burned and in flight; finishing it matters more
+   * than anything they might type next, so none of the "enter an amount" or
+   * balance checks below apply while this is true.
+   */
+  const claiming = BRIDGE_LIVE && (active?.status === "ready" || mint.stage !== "idle");
+  /** Any saved transfer owns the button; there is nothing else to do first. */
+  const owningTransfer = BRIDGE_LIVE && Boolean(shown);
+
+  const ctaDisabled = claiming
+    ? !isConnected || mint.isBusy || mint.noDestinationGas || mint.stage === "minted"
+    : owningTransfer
+      ? true
+      : !isConnected ||
+        value <= 0 ||
+        exceedsBalance ||
+        fee.isLoading ||
+        feeBlocked ||
+        (BRIDGE_LIVE && (burn.noSourceGas || burn.isBusy));
 
   const ctaLabel = !isConnected
     ? "Connect your wallet"
-    : value <= 0
-      ? "Enter an amount"
-      : exceedsBalance
-        ? `Amount exceeds ${sourceLabelShort} USDC balance`
-        : fee.isLoading
-          ? "Checking Circle's rate…"
-          : feeBlocked
-            ? "Fast rate unavailable — try Standard"
-            : BRIDGE_LIVE
-              ? liveCtaLabel()
-              : phase === "review"
-                ? "Confirm bridge"
-                : "Review bridge";
+    : claiming
+      ? claimCtaLabel()
+      : owningTransfer
+        ? liveCtaLabel()
+        : value <= 0
+          ? "Enter an amount"
+          : exceedsBalance
+            ? `Amount exceeds ${sourceLabelShort} USDC balance`
+            : fee.isLoading
+              ? "Checking Circle's rate…"
+              : feeBlocked
+                ? "Fast rate unavailable — try Standard"
+                : BRIDGE_LIVE
+                  ? liveCtaLabel()
+                  : phase === "review"
+                    ? "Confirm bridge"
+                    : "Review bridge";
+
+  /** Labels for the destination-chain claim. */
+  function claimCtaLabel(): string {
+    if (mint.stage === "minted") return `${dstLabel} · claimed`;
+    if (mint.stage === "preparing") return "Checking the claim…";
+    if (mint.stage === "signing") return "Confirm in wallet…";
+    if (mint.stage === "confirming") return `Claiming on ${dstLabel}…`;
+    if (mint.error) return mint.error;
+    if (mint.noDestinationGas) return `Need ${dstLabel} gas to claim`;
+    if (mint.needsSwitch) return `Switch to ${dstLabel} to claim`;
+    return `Claim ${shown ? formatUsdc(BigInt(shown.amount)) : ""} USDC on ${dstLabel}`;
+  }
 
   /**
    * Labels for the real path. The order matters: each one names the single
    * next thing the user must do, rather than a generic "confirm".
    */
   function liveCtaLabel(): string {
+    // A transfer waiting to be claimed outranks starting a new one: the user's
+    // money is already in flight and finishing it is the only thing that matters.
+    if (active?.status === "ready" || mint.stage !== "idle") return claimCtaLabel();
+    if (shown?.status === "failed") return "Burn failed — discard it below";
+    if (shown) return `Bridging ${formatUsdc(BigInt(shown.amount))} USDC…`;
     if (burn.noSourceGas) return `No ${sourceLabelShort} gas to send this`;
     if (burn.stage === "approving") return `Approving USDC on ${sourceLabelShort}…`;
     if (burn.stage === "preparing") return "Checking the burn…";
@@ -342,6 +492,14 @@ export default function BridgePanel() {
     if (ctaDisabled) return;
 
     if (BRIDGE_LIVE) {
+      // A ready transfer is claimed before anything else can be started.
+      if (active?.status === "ready" || mint.stage !== "idle") {
+        if (mint.stage === "minted") return;
+        if (mint.error) return mint.reset();
+        if (mint.noDestinationGas) return;
+        if (mint.needsSwitch) return mint.switchToDestination();
+        return void mint.mint();
+      }
       // Each click does exactly one thing, so the user always knows what they
       // just authorised: switch, then approve, then review, then burn.
       if (burn.needsSwitch) return burn.switchToSource();
@@ -381,30 +539,75 @@ export default function BridgePanel() {
    * dangerous thing this panel could say.
    */
   const liveSteps: Step[] = useMemo(() => {
+    // The persisted record is the source of truth: it survives a refresh, so
+    // reopening the modal shows the transfer exactly where it actually is
+    // rather than where this render happens to think it is.
+    const status = active?.status ?? (burn.stage === "burned" ? "attesting" : null);
     const burning = burn.stage === "signing" || burn.stage === "confirming";
-    const done = burn.stage === "burned";
+    const burned = status === "attesting" || status === "ready";
+    const signedByCircle = status === "ready";
+    const hash = active?.burnTxHash ?? burn.burnTxHash;
+
     return [
       {
         title: `Burn on ${srcLabel}`,
-        sub: done
-          ? `tx ${burn.burnTxHash?.slice(0, 8)}…${burn.burnTxHash?.slice(-4)} · confirmed`
+        sub: burned
+          ? `tx ${hash ? `${hash.slice(0, 8)}…${hash.slice(-4)}` : ""} · confirmed`
           : burn.stage === "signing"
             ? "Waiting for your signature…"
             : "Submitting transaction…",
-        state: done ? "done" : burning ? "active" : "",
+        state: burned ? "done" : burning || status === "burning" ? "active" : "",
       },
       {
         title: `Circle attestation${speed === "fast" ? " · Fast" : ""}`,
-        sub: done ? "Waiting for Circle to sign…" : "Queued",
-        state: done ? "active" : "",
+        sub: signedByCircle
+          ? "attestation signed ✓"
+          : attestation.isError
+            ? "Cannot reach Circle — still retrying"
+            : burned
+              ? "Waiting for Circle to sign…"
+              : "Queued",
+        state: signedByCircle ? "done" : burned ? "active" : "",
       },
-      { title: `Mint on ${dstLabel}`, sub: "Queued", state: "" },
+      {
+        title: `Mint on ${dstLabel}`,
+        sub:
+          mint.stage === "minted" || active?.status === "minted"
+            ? mint.mintTxHash
+              ? `tx ${mint.mintTxHash.slice(0, 8)}…${mint.mintTxHash.slice(-4)} · minted`
+              : "already minted ✓"
+            : mint.stage === "confirming"
+              ? "Minting native USDC…"
+              : mint.noDestinationGas
+                ? `Needs ${dstLabel} gas to claim`
+                : signedByCircle
+                  ? "Ready to claim"
+                  : "Queued",
+        state:
+          mint.stage === "minted" || active?.status === "minted"
+            ? "done"
+            : signedByCircle
+              ? "active"
+              : "",
+      },
     ];
-  }, [burn.stage, burn.burnTxHash, srcLabel, dstLabel, speed]);
+  }, [
+    active?.status,
+    active?.burnTxHash,
+    burn.stage,
+    burn.burnTxHash,
+    attestation.isError,
+    mint.stage,
+    mint.mintTxHash,
+    mint.noDestinationGas,
+    srcLabel,
+    dstLabel,
+    speed,
+  ]);
 
   const shownSteps = BRIDGE_LIVE ? liveSteps : steps;
   const bridging = BRIDGE_LIVE
-    ? phase === "bridging" || burn.stage === "burned"
+    ? phase === "bridging" || burn.stage === "burned" || Boolean(shown)
     : phase === "bridging" || phase === "done";
 
   return (
@@ -647,13 +850,102 @@ export default function BridgePanel() {
             </div>
           ))}
         </div>
-        {BRIDGE_LIVE && burn.stage === "burned" && (
+        {BRIDGE_LIVE && shown && (
           <div className="br-review" id="brBurnedNote">
-            Your USDC has been burned on {srcLabel} and is now in Circle's hands. Completing the
-            transfer on {dstLabel} is not wired up yet — keep this transaction hash.
+            {shown.status === "failed" ? (
+              <>
+                The burn transaction on {srcLabel} failed, so nothing left your wallet. Your USDC is
+                untouched — discard this and try again.
+              </>
+            ) : mint.stage === "minted" ? (
+              <>
+                {formatUsdc(BigInt(shown.amount))} USDC arrived on {dstLabel}.
+                {mint.mintTxHash ? "" : " It had already been claimed."}
+              </>
+            ) : mint.noDestinationGas ? (
+              <>
+                Circle has signed, and your {formatUsdc(BigInt(shown.amount))} USDC is waiting on{" "}
+                {dstLabel} — but claiming it costs gas on {dstLabel}, and this wallet has none
+                there. Add a little and come back; nothing is lost in the meantime.
+              </>
+            ) : shown.status === "ready" ? (
+              <>
+                Circle has signed. Claim your {formatUsdc(BigInt(shown.amount))} USDC on {dstLabel}{" "}
+                to finish. This is saved and will still be here after a refresh.
+              </>
+            ) : stalled ? (
+              <>
+                This has been waiting {waitingMinutes} minutes, which is far longer than expected.
+                Your USDC is not lost — open the burn below to check it confirmed, and Circle will
+                still sign it whenever it catches up.
+              </>
+            ) : (
+              <>
+                Your USDC has been burned on {srcLabel} and is now in Circle's hands. This transfer
+                is saved, so closing this window will not lose it.
+              </>
+            )}
+            <br />
+            {/* The link is the recovery path: with it, a stuck transfer can
+                always be inspected and finished by hand. */}
+            <a
+              className="mono"
+              id="brBurnLink"
+              href={txUrl(chainByKey(shown.sourceKey), shown.burnTxHash)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: "11px", opacity: 0.85 }}
+            >
+              burn: {shown.burnTxHash.slice(0, 14)}…{shown.burnTxHash.slice(-8)} ↗
+            </a>
+            {shown.mintTxHash ? (
+              <>
+                <br />
+                <a
+                  className="mono"
+                  id="brMintLink"
+                  href={txUrl(chainByKey(shown.destinationKey), shown.mintTxHash)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: "11px", opacity: 0.85 }}
+                >
+                  mint: {shown.mintTxHash.slice(0, 14)}…{shown.mintTxHash.slice(-8)} ↗
+                </a>
+              </>
+            ) : null}
+            {/* An in-flight transfer takes over the whole panel, so there has to
+                be a way out of a record that can never finish. */}
+            {(shown.status === "failed" || stalled || mint.stage === "minted") && (
+              <>
+                <br />
+                <button
+                  type="button"
+                  className="br-again"
+                  id="brDiscard"
+                  onClick={() => {
+                    if (!discardArmed) return setDiscardArmed(true);
+                    clearFinished();
+                  }}
+                >
+                  {discardArmed
+                    ? "Tap again to forget it — copy the hash first"
+                    : "Discard this transfer"}
+                </button>
+              </>
+            )}
           </div>
         )}
-        <div className="br-done" id="brDone" hidden={BRIDGE_LIVE || phase !== "done"}>
+        {BRIDGE_LIVE && !canPersist && (
+          <div className="br-review" id="brPersistWarn" role="alert">
+            This browser is refusing to save anything. Copy the transaction hash above before you
+            close this window — without it an in-flight transfer cannot be recovered.
+          </div>
+        )}
+        <div
+          className="br-done"
+          id="brDone"
+          hidden={BRIDGE_LIVE ? mint.stage !== "minted" : phase !== "done"}
+        >
           <div className="bd-ic">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path
@@ -667,18 +959,28 @@ export default function BridgePanel() {
           </div>
           <h3 id="brDoneTitle">Bridge complete</h3>
           <div className="bd-amt" id="brDoneAmt">
-            {doneAmt}
+            {BRIDGE_LIVE && shown
+              ? `${formatUsdc(BigInt(shown.amount))} USDC arrived on ${dstLabel}`
+              : doneAmt}
           </div>
           <button
             className="cta"
             id="brDonePrimary"
             onClick={() => {
-              const wasIn = donePrimaryLabel.indexOf("Deposit") === 0;
+              // Clear the finished record first, so reopening the panel starts
+              // fresh instead of showing a completed transfer forever.
+              if (BRIDGE_LIVE) clearFinished();
+              const label = BRIDGE_LIVE
+                ? toAvax
+                  ? "Deposit & start market making"
+                  : "Done"
+                : donePrimaryLabel;
+              const wasIn = label.indexOf("Deposit") === 0;
               document.querySelector<HTMLElement>("#ovBridge [data-close]")?.click();
               if (wasIn) document.getElementById("navDeposit")?.click();
             }}
           >
-            {donePrimaryLabel}
+            {BRIDGE_LIVE ? (toAvax ? "Deposit & start market making" : "Done") : donePrimaryLabel}
           </button>
           <button
             className="br-again"

@@ -16,6 +16,18 @@
  */
 
 import type { Address, Hex } from "viem";
+import {
+  arbitrum,
+  arbitrumSepolia,
+  avalanche,
+  avalancheFuji,
+  base,
+  baseSepolia,
+  mainnet,
+  polygon,
+  polygonAmoy,
+  sepolia,
+} from "viem/chains";
 import { isMainnet } from "./wagmi";
 
 /* ------------------------------------------------------------------ */
@@ -105,7 +117,17 @@ export interface BridgeChain {
   domain: CctpDomain;
   /** Native Circle USDC on this chain. */
   usdc: Address;
+  /**
+   * Block explorer root, taken from viem's own chain definitions rather than
+   * typed out here. A stuck transfer is only recoverable if the user can go and
+   * look at the burn, so these links are part of the safety story.
+   */
+  explorer: string;
 }
+
+/** viem carries the canonical explorer for every chain we support. */
+const explorerOf = (chain: { blockExplorers?: { default: { url: string } } }): string =>
+  chain.blockExplorers?.default.url ?? "";
 
 const MAINNET_CHAINS: readonly BridgeChain[] = [
   {
@@ -113,6 +135,7 @@ const MAINNET_CHAINS: readonly BridgeChain[] = [
     label: "Avalanche C-Chain",
     chainId: 43114,
     domain: CCTP_DOMAIN.avalanche,
+    explorer: explorerOf(avalanche),
     usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
   },
   {
@@ -120,6 +143,7 @@ const MAINNET_CHAINS: readonly BridgeChain[] = [
     label: "Ethereum",
     chainId: 1,
     domain: CCTP_DOMAIN.ethereum,
+    explorer: explorerOf(mainnet),
     usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   },
   {
@@ -127,6 +151,7 @@ const MAINNET_CHAINS: readonly BridgeChain[] = [
     label: "Base",
     chainId: 8453,
     domain: CCTP_DOMAIN.base,
+    explorer: explorerOf(base),
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   },
   {
@@ -134,6 +159,7 @@ const MAINNET_CHAINS: readonly BridgeChain[] = [
     label: "Arbitrum",
     chainId: 42161,
     domain: CCTP_DOMAIN.arbitrum,
+    explorer: explorerOf(arbitrum),
     usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   },
   {
@@ -141,6 +167,7 @@ const MAINNET_CHAINS: readonly BridgeChain[] = [
     label: "Polygon",
     chainId: 137,
     domain: CCTP_DOMAIN.polygon,
+    explorer: explorerOf(polygon),
     usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
   },
 ] as const;
@@ -151,6 +178,7 @@ const TESTNET_CHAINS: readonly BridgeChain[] = [
     label: "Avalanche C-Chain",
     chainId: 43113,
     domain: CCTP_DOMAIN.avalanche,
+    explorer: explorerOf(avalancheFuji),
     usdc: "0x5425890298aed601595a70AB815c96711a31Bc65",
   },
   {
@@ -158,6 +186,7 @@ const TESTNET_CHAINS: readonly BridgeChain[] = [
     label: "Ethereum",
     chainId: 11155111,
     domain: CCTP_DOMAIN.ethereum,
+    explorer: explorerOf(sepolia),
     usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   },
   {
@@ -165,6 +194,7 @@ const TESTNET_CHAINS: readonly BridgeChain[] = [
     label: "Base",
     chainId: 84532,
     domain: CCTP_DOMAIN.base,
+    explorer: explorerOf(baseSepolia),
     usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   },
   {
@@ -172,6 +202,7 @@ const TESTNET_CHAINS: readonly BridgeChain[] = [
     label: "Arbitrum",
     chainId: 421614,
     domain: CCTP_DOMAIN.arbitrum,
+    explorer: explorerOf(arbitrumSepolia),
     usdc: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
   },
   {
@@ -179,6 +210,7 @@ const TESTNET_CHAINS: readonly BridgeChain[] = [
     label: "Polygon",
     chainId: 80002,
     domain: CCTP_DOMAIN.polygon,
+    explorer: explorerOf(polygonAmoy),
     usdc: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
   },
 ] as const;
@@ -199,6 +231,12 @@ export function chainByKey(key: string): BridgeChain | null {
 /** Match the existing markup's `data-chain` labels to a supported chain. */
 export function chainByLabel(label: string): BridgeChain | null {
   return BRIDGE_CHAINS.find((c) => c.label === label) ?? null;
+}
+
+/** Link to a transaction on that chain's explorer. Empty when unknown. */
+export function txUrl(chain: BridgeChain | null, hash: string): string {
+  if (!chain?.explorer) return "";
+  return `${chain.explorer}/tx/${hash}`;
 }
 
 export function chainByDomain(domain: number): BridgeChain | null {
@@ -264,9 +302,6 @@ export function attestationUrl(sourceDomain: number, burnTxHash: Hex): string {
 export function feeUrl(sourceDomain: number, destinationDomain: number): string {
   return `${IRIS_BASE}/v2/burn/USDC/fees/${sourceDomain}/${destinationDomain}`;
 }
-
-/** Attestation states Iris reports. `complete` is the only one we can mint on. */
-export type AttestationStatus = "complete" | "pending_confirmations";
 
 /* ------------------------------------------------------------------ */
 /* ABIs                                                                */

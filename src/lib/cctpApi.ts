@@ -8,7 +8,8 @@
  * Docs: https://developers.circle.com/api-reference/cctp/all/get-burn-usdc-fees
  */
 
-import { FINALITY, feeUrl, type TransferSpeed } from "./cctp";
+import type { Hex } from "viem";
+import { FINALITY, attestationUrl, feeUrl, type TransferSpeed } from "./cctp";
 
 const REQUEST_TIMEOUT_MS = 12_000;
 
@@ -93,4 +94,75 @@ export async function fetchBurnFees(
 export function bpsForSpeed(fees: BurnFees | undefined, speed: TransferSpeed): number | null {
   if (!fees) return null;
   return speed === "fast" ? fees.fast : fees.standard;
+}
+
+/* ------------------------------------------------------------------ */
+/* Attestations                                                        */
+/* ------------------------------------------------------------------ */
+
+/** Iris reports one of these per message. Only `complete` can be minted. */
+export type AttestationStatus = "complete" | "pending_confirmations";
+
+export interface Attestation {
+  status: AttestationStatus;
+  /** The CCTP message bytes. Needed verbatim by receiveMessage. */
+  message: Hex | null;
+  /** Circle's signature over the message. Null until status is complete. */
+  attestation: Hex | null;
+  eventNonce: string | null;
+}
+
+interface IrisMessage {
+  message?: string;
+  attestation?: string | null;
+  status?: string;
+  eventNonce?: string;
+  cctpVersion?: number;
+}
+
+const isHex = (v: unknown): v is Hex =>
+  typeof v === "string" && /^0x[0-9a-fA-F]*$/.test(v) && v.length > 2;
+
+/**
+ * Circle's signed proof that a burn happened, looked up by its transaction.
+ *
+ * Returns null while Iris has not indexed the burn yet — a burn that has only
+ * just been mined is legitimately absent for a few seconds, which is different
+ * from an error and must not be shown to the user as one.
+ *
+ * The V1 API used the literal string "PENDING" in the attestation field; V2
+ * uses null. Anything that is not real hex is treated as "not signed yet"
+ * rather than passed on to a contract call that would revert.
+ */
+export async function fetchAttestation(
+  sourceDomain: number,
+  burnTxHash: Hex,
+  signal?: AbortSignal | undefined,
+): Promise<Attestation | null> {
+  let payload: { messages?: IrisMessage[] };
+  try {
+    payload = await requestJson<{ messages?: IrisMessage[] }>(
+      attestationUrl(sourceDomain, burnTxHash),
+      signal,
+    );
+  } catch (error) {
+    // Iris answers 404 until it has seen the burn. That is "not yet", not a
+    // failure, and retrying is exactly the right thing to do.
+    if (error instanceof CctpApiError && /404/.test(error.message)) return null;
+    throw error;
+  }
+
+  const messages = Array.isArray(payload?.messages) ? payload.messages : [];
+  // Ignore any V1 rows: their message format is not accepted by the V2
+  // MessageTransmitter, so minting one would revert.
+  const row = messages.find((m) => m?.cctpVersion === undefined || Number(m.cctpVersion) === 2);
+  if (!row) return null;
+
+  const complete = row.status === "complete" && isHex(row.attestation);
+  return {
+    status: complete ? "complete" : "pending_confirmations",
+    message: isHex(row.message) ? row.message : null,
+    attestation: complete && isHex(row.attestation) ? row.attestation : null,
+    eventNonce: typeof row.eventNonce === "string" ? row.eventNonce : null,
+  };
 }
