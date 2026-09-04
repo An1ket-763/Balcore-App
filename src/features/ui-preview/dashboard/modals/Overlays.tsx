@@ -2,6 +2,7 @@ import { LOGO } from "../logo";
 import { useTokenBalances } from "../data/balances";
 import { getTokenPrices, type TokenSymbol } from "../data/prices";
 import SwapPanel from "./SwapPanel";
+import BridgePanel from "./BridgePanel";
 
 const WALLET_ROWS: { sym: TokenSymbol; coinClass: string; glyph: string; unit: string; pool: string }[] = [
   { sym: "BTC", coinClass: "c-btc", glyph: "₿", unit: "BTC", pool: "btc" },
@@ -178,94 +179,7 @@ export default function Overlays() {
 
 
 <div className="overlay" id="ovBridge" role="dialog" aria-modal="true" aria-labelledby="bridgeTitle">
-  <div className="modal bridge-modal">
-    <div className="m-head">
-      <h2 id="bridgeTitle">Bridge USDC to Balcore</h2>
-      <button className="m-close" data-close={true} aria-label="Close">✕</button>
-    </div>
-    <p className="br-subtitle" id="brSubtitle">Bring USDC in from any chain — then deposit and start market making.</p>
-
-    <div className="br-dir">
-      <div className="br-chain glow-from">
-        <span className="br-ic" id="brFromIc"></span>
-        <div className="br-meta">
-          <div className="br-lbl">From</div>
-          <div className="br-name" id="brFromName">Ethereum</div>
-        </div>
-      </div>
-      <div className="br-link">
-        <div className="br-line"></div>
-        <div className="br-pulse"></div>
-        <button className="br-swap-dir" id="brFlip" aria-label="Reverse bridge direction" title="Reverse direction">
-          <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M4 5.5h9M10.5 3l2.5 2.5-2.5 2.5M13 11.5H4M6.5 9 4 11.5 6.5 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </button>
-      </div>
-      <div className="br-chain glow-to">
-        <span className="br-ic" id="brToIc"></span>
-        <div className="br-meta">
-          <div className="br-lbl">To</div>
-          <div className="br-name" id="brToName">Avalanche C-Chain</div>
-        </div>
-      </div>
-    </div>
-
-    <div className="br-chips" id="brChips" role="group" aria-label="Select the other chain">
-      <button className="br-chip on" data-chain="Ethereum"><span className="bc-ic"></span>Ethereum</button>
-      <button className="br-chip" data-chain="Base"><span className="bc-ic"></span>Base</button>
-      <button className="br-chip" data-chain="Arbitrum"><span className="bc-ic"></span>Arbitrum</button>
-      <button className="br-chip" data-chain="Polygon"><span className="bc-ic"></span>Polygon</button>
-      <button className="br-chip" data-chain="Solana"><span className="bc-ic"></span>Solana</button>
-      <button className="br-chip soon" data-chain="NEAR" aria-disabled="true" title="Native USDC is live on NEAR \u2014 route opens when Circle connects NEAR to CCTP"><span className="bc-ic"></span>NEAR<span className="bc-soon">Soon</span></button>
-      <button className="br-chip soon" data-chain="Robinhood Chain" aria-disabled="true" title="Robinhood Chain mainnet is live \u2014 route opens when Circle ships native USDC / CCTP support"><span className="bc-ic"></span>Robinhood<span className="bc-soon">Soon</span></button>
-    </div>
-
-    <div className="swap-field">
-      <div className="swap-field-top"><span>Amount</span><span>Balance: <span className="mono" style={{color: "var(--text-2)"}} id="brBal">14,200 USDC</span></span></div>
-      <div className="swap-pct" id="brPct">
-        <button className="swap-pct-btn" data-pct="25" type="button">25%</button>
-        <button className="swap-pct-btn" data-pct="50" type="button">50%</button>
-        <button className="swap-pct-btn" data-pct="75" type="button">75%</button>
-        <button className="swap-pct-btn" data-pct="100" type="button">Max</button>
-      </div>
-      <div className="swap-field-row">
-        <input id="brAmt" inputMode="decimal" placeholder="0.00" aria-label="Amount of USDC to bridge" />
-        <button className="token-pick" style={{cursor: "default"}} tabIndex={-1}><span className="coin c-usd">$</span>USDC</button>
-      </div>
-    </div>
-
-    <div className="br-speed" role="group" aria-label="Transfer speed">
-      <button className="br-speed-opt on" data-speed="fast">
-        <div className="bs-t"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M9 1.5 3.5 9H7l-1 5.5L11.5 7H8l1-5.5Z" fill="currentColor" /></svg>Fast</div>
-        <div className="bs-s">~30 seconds · small fee</div>
-      </button>
-      <button className="br-speed-opt" data-speed="standard">
-        <div className="bs-t"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" /><path d="M8 4.8V8l2.2 1.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>Standard</div>
-        <div className="bs-s">Waits for finality · no protocol fee</div>
-      </button>
-    </div>
-
-    <div className="swap-rows m-rows">
-      <div className="m-row"><span className="k">Route</span><span className="v">Circle CCTP v2 · native burn & mint</span></div>
-      <div className="m-row"><span className="k">You receive</span><span className="v mono" id="brRecv">—</span></div>
-      <div className="m-row"><span className="k">Bridge fee</span><span className="v" id="brFee">—</span></div>
-      <div className="m-row"><span className="k">Est. time</span><span className="v" id="brEta">~30 seconds</span></div>
-    </div>
-
-    <div className="br-pipe" aria-hidden="true"><span className="bp">Burn</span><span className="bp-arrow">→</span><span className="bp">Attest</span><span className="bp-arrow">→</span><span className="bp">Mint</span></div>
-
-    <div className="br-review" id="brReviewNote" hidden={true}></div>
-    <button className="cta" id="brCta" aria-live="polite" disabled={true}>Enter an amount</button>
-    <div className="br-progress" id="brProgress" hidden={true} aria-live="polite">
-      <div id="brSteps"></div>
-      <div className="br-done" id="brDone" hidden={true}>
-        <div className="bd-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-        <h3 id="brDoneTitle">Bridge complete</h3>
-        <div className="bd-amt" id="brDoneAmt"></div>
-        <button className="cta" id="brDonePrimary">Deposit & start market making</button>
-        <button className="br-again" id="brAgain">Bridge again</button>
-      </div>
-    </div>
-  </div>
+  <BridgePanel />
 </div>
 
 
