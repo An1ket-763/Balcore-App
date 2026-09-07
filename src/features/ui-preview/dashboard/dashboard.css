@@ -247,6 +247,11 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .br-again:hover{border-color:rgba(139,123,245,.5);color:var(--text)}
 .bridge-modal.bridging .br-chips,.bridge-modal.bridging .swap-field,.bridge-modal.bridging .br-speed,.bridge-modal.bridging .m-rows,.bridge-modal.bridging .br-pipe,.bridge-modal.bridging #brCta,.bridge-modal.bridging #brReviewNote,.bridge-modal.bridging .br-subtitle{display:none}
 .bridge-modal.bridging .br-pulse{animation-duration:1.1s}
+/* The simulated flow drove itself to done with no clicks, so hiding the CTA
+   while bridging was harmless. The real path needs it: switching to the
+   destination chain and claiming are both CTA clicks, and without this the
+   attested transfer is unreachable from the UI. */
+.bridge-modal.bridging.needs-cta #brCta{display:block}
 /* swap route selector (aggregator) */
 .route-block{margin-top:11px}
 .route-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}

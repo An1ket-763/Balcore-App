@@ -254,6 +254,30 @@ export default function BridgePanel() {
   const shown = active ?? settled ?? justMinted;
 
   /**
+   * A saved transfer is the ONLY truth about its own direction.
+   *
+   * This component remounts when the wallet switches chain — which the claim
+   * step does on purpose — and `toAvax` / `other` snap back to their defaults
+   * ("into Avalanche", "Ethereum"). Every label, step title and chain logo is
+   * derived from those two, so an in-flight Avalanche -> Base transfer was
+   * being drawn as "Ethereum -> Avalanche" mid-claim. The transaction itself
+   * was never wrong (the mint reads `destinationKey` off the record), but a
+   * panel that names the wrong chains while asking for a signature is not
+   * something a user can be expected to trust. Put the panel back.
+   */
+  useEffect(() => {
+    if (!BRIDGE_LIVE || !shown) return;
+    const src = chainByKey(shown.sourceKey);
+    const dst = chainByKey(shown.destinationKey);
+    if (!src || !dst) return;
+    const intoAvax = dst.key === AVALANCHE_CHAIN.key;
+    setToAvax(intoAvax);
+    setOther(intoAvax ? src.label : dst.label);
+    // Only the identity of the owning transfer matters here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown?.burnTxHash]);
+
+  /**
    * Put the panel back to a blank, usable state.
    *
    * Dropping the stored record is not enough on its own: the burn and mint
@@ -354,11 +378,17 @@ export default function BridgePanel() {
    * balance checks below apply while this is true.
    */
   const claiming = BRIDGE_LIVE && (active?.status === "ready" || mint.stage !== "idle");
+  /**
+   * Minted, from either source. The hook's stage is reset by a page reload,
+   * so the stored record is the only thing that still knows a refreshed
+   * transfer was already claimed.
+   */
+  const claimed = mint.stage === "minted" || shown?.status === "minted";
   /** Any saved transfer owns the button; there is nothing else to do first. */
   const owningTransfer = BRIDGE_LIVE && Boolean(shown);
 
   const ctaDisabled = claiming
-    ? !isConnected || mint.isBusy || mint.noDestinationGas || mint.stage === "minted"
+    ? !isConnected || mint.isBusy || mint.noDestinationGas || claimed
     : owningTransfer
       ? true
       : !isConnected ||
@@ -390,7 +420,7 @@ export default function BridgePanel() {
 
   /** Labels for the destination-chain claim. */
   function claimCtaLabel(): string {
-    if (mint.stage === "minted") return `${dstLabel} · claimed`;
+    if (claimed) return `${dstLabel} · claimed`;
     if (mint.stage === "preparing") return "Checking the claim…";
     if (mint.stage === "signing") return "Confirm in wallet…";
     if (mint.stage === "confirming") return `Claiming on ${dstLabel}…`;
@@ -408,6 +438,7 @@ export default function BridgePanel() {
     // A transfer waiting to be claimed outranks starting a new one: the user's
     // money is already in flight and finishing it is the only thing that matters.
     if (active?.status === "ready" || mint.stage !== "idle") return claimCtaLabel();
+    if (claimed) return `${dstLabel} · claimed`;
     if (shown?.status === "failed") return "Burn failed — discard it below";
     if (shown) return `Bridging ${formatUsdc(BigInt(shown.amount))} USDC…`;
     if (burn.noSourceGas) return `No ${sourceLabelShort} gas to send this`;
@@ -494,7 +525,7 @@ export default function BridgePanel() {
     if (BRIDGE_LIVE) {
       // A ready transfer is claimed before anything else can be started.
       if (active?.status === "ready" || mint.stage !== "idle") {
-        if (mint.stage === "minted") return;
+        if (claimed) return;
         if (mint.error) return mint.reset();
         if (mint.noDestinationGas) return;
         if (mint.needsSwitch) return mint.switchToDestination();
@@ -542,11 +573,15 @@ export default function BridgePanel() {
     // The persisted record is the source of truth: it survives a refresh, so
     // reopening the modal shows the transfer exactly where it actually is
     // rather than where this render happens to think it is.
-    const status = active?.status ?? (burn.stage === "burned" ? "attesting" : null);
+    const status = shown?.status ?? (burn.stage === "burned" ? "attesting" : null);
     const burning = burn.stage === "signing" || burn.stage === "confirming";
-    const burned = status === "attesting" || status === "ready";
-    const signedByCircle = status === "ready";
-    const hash = active?.burnTxHash ?? burn.burnTxHash;
+    // A minted transfer necessarily burned and was attested. Reading only the
+    // live status would redraw a finished transfer as if it were starting.
+    const done = status === "minted" || claimed;
+    const burned = status === "attesting" || status === "ready" || done;
+    const signedByCircle = status === "ready" || done;
+    const hash = shown?.burnTxHash ?? burn.burnTxHash;
+    const mintHash = shown?.mintTxHash ?? mint.mintTxHash;
 
     return [
       {
@@ -571,29 +606,25 @@ export default function BridgePanel() {
       },
       {
         title: `Mint on ${dstLabel}`,
-        sub:
-          mint.stage === "minted" || active?.status === "minted"
-            ? mint.mintTxHash
-              ? `tx ${mint.mintTxHash.slice(0, 8)}…${mint.mintTxHash.slice(-4)} · minted`
-              : "already minted ✓"
-            : mint.stage === "confirming"
-              ? "Minting native USDC…"
-              : mint.noDestinationGas
-                ? `Needs ${dstLabel} gas to claim`
-                : signedByCircle
-                  ? "Ready to claim"
-                  : "Queued",
-        state:
-          mint.stage === "minted" || active?.status === "minted"
-            ? "done"
-            : signedByCircle
-              ? "active"
-              : "",
+        sub: done
+          ? mintHash
+            ? `tx ${mintHash.slice(0, 8)}…${mintHash.slice(-4)} · minted`
+            : "already minted ✓"
+          : mint.stage === "confirming"
+            ? "Minting native USDC…"
+            : mint.noDestinationGas
+              ? `Needs ${dstLabel} gas to claim`
+              : signedByCircle
+                ? "Ready to claim"
+                : "Queued",
+        state: done ? "done" : signedByCircle ? "active" : "",
       },
     ];
   }, [
-    active?.status,
-    active?.burnTxHash,
+    shown?.status,
+    shown?.burnTxHash,
+    shown?.mintTxHash,
+    claimed,
     burn.stage,
     burn.burnTxHash,
     attestation.isError,
@@ -611,7 +642,11 @@ export default function BridgePanel() {
     : phase === "bridging" || phase === "done";
 
   return (
-    <div className={`modal bridge-modal${bridging ? " bridging" : ""}`}>
+    <div
+      className={`modal bridge-modal${bridging ? " bridging" : ""}${
+        bridging && BRIDGE_LIVE && !claimed ? " needs-cta" : ""
+      }`}
+    >
       <div className="m-head">
         <h2 id="bridgeTitle">{title}</h2>
         <button className="m-close" data-close={true} aria-label="Close">
@@ -857,10 +892,10 @@ export default function BridgePanel() {
                 The burn transaction on {srcLabel} failed, so nothing left your wallet. Your USDC is
                 untouched — discard this and try again.
               </>
-            ) : mint.stage === "minted" ? (
+            ) : claimed ? (
               <>
                 {formatUsdc(BigInt(shown.amount))} USDC arrived on {dstLabel}.
-                {mint.mintTxHash ? "" : " It had already been claimed."}
+                {(shown.mintTxHash ?? mint.mintTxHash) ? "" : " It had already been claimed."}
               </>
             ) : mint.noDestinationGas ? (
               <>
@@ -915,7 +950,7 @@ export default function BridgePanel() {
             ) : null}
             {/* An in-flight transfer takes over the whole panel, so there has to
                 be a way out of a record that can never finish. */}
-            {(shown.status === "failed" || stalled || mint.stage === "minted") && (
+            {(shown.status === "failed" || stalled || claimed) && (
               <>
                 <br />
                 <button
@@ -941,11 +976,7 @@ export default function BridgePanel() {
             close this window — without it an in-flight transfer cannot be recovered.
           </div>
         )}
-        <div
-          className="br-done"
-          id="brDone"
-          hidden={BRIDGE_LIVE ? mint.stage !== "minted" : phase !== "done"}
-        >
+        <div className="br-done" id="brDone" hidden={BRIDGE_LIVE ? !claimed : phase !== "done"}>
           <div className="bd-ic">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path
