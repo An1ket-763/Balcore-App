@@ -1403,6 +1403,13 @@ html[data-theme="light"] .card{box-shadow:0 1px 2px rgba(23,22,48,.06),0 12px 30
   .swap-modal .swap-body{margin-inline:-16px;padding-inline:16px}
   .swap-modal .swap-actions{margin-inline:-16px;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px))}
   .swap-modal .swap-body:last-child{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  /* bridge takes the full screen too — same reason as swap */
+  .modal.bridge-modal{
+    height:100dvh;max-height:none;border-radius:0;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+    overflow-y:auto;-webkit-overflow-scrolling:touch
+  }
+  .bridge-modal .m-head{margin-inline:-16px;padding:0 16px 9px}
 }
 
 /* ===== donut + legend stack cleanly, legend never truncates ===== */
