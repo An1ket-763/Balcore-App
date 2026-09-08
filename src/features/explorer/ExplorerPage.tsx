@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { LOGO } from "@/features/ui-preview/dashboard/logo";
+import { Link } from "@tanstack/react-router";
 import "./explorer.css";
 import {
   csv,
@@ -435,6 +435,18 @@ export default function ExplorerPage() {
         onSearch={handleGlobalSearch}
       />
       <main className="shell">
+        <Link to="/" className="back-link" aria-label="Back to home">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M15 5l-7 7 7 7"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Back
+        </Link>
         <Hero />
 
         <div className="tabs" role="tablist" aria-label="Explorer views">
@@ -604,15 +616,6 @@ export default function ExplorerPage() {
           </div>
         </section>
 
-        <footer className="footer">
-          <span>
-            <b>Balcore Explorer</b> · reads the chain, never the other way around
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            Be the Market Maker
-            <img src={LOGO} alt="" aria-hidden="true" style={{ width: 15, height: 15, objectFit: "contain" }} />
-          </span>
-        </footer>
       </main>
 
       <ProofDrawer proof={proof} onClose={() => setProof(null)} onCopy={copyText} onToast={showToast} />
