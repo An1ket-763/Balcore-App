@@ -617,15 +617,6 @@ export default function ExplorerPage() {
           </div>
         </section>
 
-        <footer className="footer">
-          <span>
-            <b>Balcore Explorer</b> · reads the chain, never the other way around
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            Be the Market Maker
-            <img src={LOGO} alt="" aria-hidden="true" style={{ width: 15, height: 15, objectFit: "contain" }} />
-          </span>
-        </footer>
       </main>
 
       <ProofDrawer proof={proof} onClose={() => setProof(null)} onCopy={copyText} onToast={showToast} />

@@ -444,3 +444,6 @@
 .balcore-explorer .tok{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:500}
 .balcore-explorer .mono-sub{font-family:var(--mono);font-size:9.5px;margin-top:3px}
 
+
+.balcore-explorer .back-link{display:inline-flex;align-items:center;gap:7px;margin:0 0 14px;padding:7px 12px;border:1px solid var(--line2);border-radius:9px;color:var(--text2);font-size:12px;font-weight:600;text-decoration:none;background:transparent}
+.balcore-explorer .back-link:hover{color:var(--text);border-color:var(--line)}
