@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { LOGO } from "@/features/ui-preview/dashboard/logo";
 import "./explorer.css";
 import {
   csv,
