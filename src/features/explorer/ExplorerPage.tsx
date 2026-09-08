@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { LOGO } from "@/features/ui-preview/dashboard/logo";
 import "./explorer.css";
 import {
@@ -435,6 +436,18 @@ export default function ExplorerPage() {
         onSearch={handleGlobalSearch}
       />
       <main className="shell">
+        <Link to="/" className="back-link" aria-label="Back to home">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M15 5l-7 7 7 7"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Back
+        </Link>
         <Hero />
 
         <div className="tabs" role="tablist" aria-label="Explorer views">
