@@ -83,6 +83,7 @@ export default function DashboardApp() {
         onClick={() => setMenuOpen(false)}
         aria-hidden="true"
       />
+      <div className="donut-tip" id="donutTip" role="status" aria-live="polite"></div>
       <main className="main">
         <Topnav
           onConnectClick={() => { }}
@@ -94,6 +95,10 @@ export default function DashboardApp() {
         <ActivityView />
       </main>
       <Overlays />
+      <div className="toast" id="toast" role="status" aria-live="polite">
+        <span className="live-dot"></span>
+        <span id="toastMsg"></span>
+      </div>
       <DashboardScriptsMount />
     </div>
   );

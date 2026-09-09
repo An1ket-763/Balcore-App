@@ -403,7 +403,7 @@ window.__countUp = function(el){
       if (t && typeof t.focus === 'function' && document.contains(t)) t.focus();
     }
   };
-  navDeposit.addEventListener('click',e=>{ e.preventDefault(); setModalActive(navDeposit); open(ovD); });
+  navDeposit.addEventListener('click',e=>{ e.preventDefault(); setModalActive(navDeposit); open(ovD); if (window.__balcoreDepChooser) window.__balcoreDepChooser(); });
   navWithdraw.addEventListener('click',e=>{ e.preventDefault(); setModalActive(navWithdraw); open(ovW); });
   document.getElementById('swapBtn').addEventListener('click',()=> open(ovS));
   const ovB = document.getElementById('ovBridge');
@@ -433,7 +433,7 @@ window.__countUp = function(el){
     ovWallet.addEventListener('click', e=>{ if(e.target===ovWallet) close(ovWallet); });
     ovWallet.querySelector('[data-close]').addEventListener('click', ()=> close(ovWallet));
     ovWallet.querySelectorAll('.wl-dep').forEach(function(btn){ btn.addEventListener('click', function(){
-      close(ovWallet); setModalActive(navDeposit); open(ovD);
+      close(ovWallet); setModalActive(navDeposit); open(ovD); if (window.__balcoreDepDirect) window.__balcoreDepDirect('wallet');
       var pk = btn.dataset.pool;
       if (pk && pk!=='usdc'){ var mi = document.querySelector('#depPoolMenu .pool-menu-item[data-pool="'+pk+'"]'); if(mi) mi.click(); }
     }); });
@@ -474,7 +474,7 @@ window.__countUp = function(el){
     });
   });
   // position actions route to the global deposit / withdraw flows
-  document.getElementById('posAdd').addEventListener('click',()=>{ close(ovP); open(ovD); });
+  document.getElementById('posAdd').addEventListener('click',()=>{ close(ovP); open(ovD); if (window.__balcoreDepDirect) window.__balcoreDepDirect('wallet'); });
   document.getElementById('posWd').addEventListener('click',()=>{ close(ovP); open(ovW); });
 
   const fmt = n => '$' + Math.round(n).toLocaleString();
@@ -485,6 +485,12 @@ window.__countUp = function(el){
   let BTC_PRICE = 63200; let CUR_SYM = "BTC", CUR_DEC = 6;
   // live wallet balance (USDC on the selected Avalanche chain) — read fresh on every validation pass
   const usdcBal = () => { const b = getTokenBalances(); return typeof b.USDC === 'number' ? b.USDC : 0; };
+  // USDC that arrived in the user's Balcore account and has not been deployed yet
+  let BALC = 0;
+  let useBalance = false;
+  // illustrative on-ramp arrivals that are not part of the on-chain balance read
+  let walletGain = 0;
+  const srcMax = () => (useBalance ? BALC : usdcBal() + walletGain);
   // format an amount input with thous-separator commas as the user types (cursor-preserving)
   function fmtMoney(el, maxDec){
     if(!el) return;
@@ -510,7 +516,7 @@ window.__countUp = function(el){
     if (v <= 0){ dCta.disabled = true; dCta.textContent = 'Enter an amount'; dBtc.textContent = dUsd.textContent = '—'; return; }
     dBtc.textContent = (v/2/BTC_PRICE).toFixed(CUR_DEC) + ' ' + CUR_SYM;
     dUsd.textContent = fmt(v/2) + ' USDC';
-    if (v > usdcBal()){ dCta.disabled = true; dCta.textContent = 'Amount exceeds wallet balance'; return; }
+    if (v > srcMax()){ dCta.disabled = true; dCta.textContent = useBalance ? 'Amount exceeds your Balcore balance' : 'Amount exceeds wallet balance'; return; }
     dCta.disabled = false; dCta.textContent = 'Deposit ' + fmt(v);
   }
   dAmt.addEventListener('input', dUpdate);
@@ -627,7 +633,9 @@ window.__countUp = function(el){
     gold: {name:'Gold / Dollar',    asset:'Gold',    sym:'XAUt', sub:'XAUt · USDC', price:2650,  apy:'28.4%', coin:'Au',      cls:'c-gold', bal:14,   dec:3}
   };
   const depPoolBtn = document.getElementById('depPoolBtn'), depPoolMenu = document.getElementById('depPoolMenu');
+  let depPoolKey = 'btc';
   function setDepPool(key){
+    depPoolKey = key;
     const pl = DEP_POOLS[key]; BTC_PRICE = pl.price; BTC_BAL = pl.bal; CUR_SYM = pl.sym; CUR_DEC = pl.dec;
     document.getElementById('depPoolIc').innerHTML = '<span class="coin ' + pl.cls + '">' + pl.coin + '</span><span class="coin c-usd">$</span>';
     document.getElementById('depPoolName').textContent = pl.name;
@@ -663,20 +671,67 @@ window.__countUp = function(el){
     });
   }
 
-  // ---- funding source toggle (From wallet / From bank) ----
+  // ---- funding source toggle (From wallet / From bank / From exchange) ----
   const walletPanel = document.getElementById('depWalletPanel');
   const bankPanel = document.getElementById('depBankPanel');
+  const exchPanel = document.getElementById('depExchPanel');
   const depSub = document.querySelector('#ovDeposit .m-sub');
+  const SRC_SUB = {
+    wallet:   'Your deposit starts making markets at the next placement.',
+    bank:     'Pay in dollars through Coinbase. It lands as USDC in your wallet in 1\u20133 business days; then you choose how much goes into a pool.',
+    exchange: 'Send USDC to your Balcore address from any exchange or wallet. It lands here as USDC, and you choose what to do with it.'
+  };
+  let depSrc = 'wallet', lastSrc = null;
+  const depChoose = document.getElementById('depChoose'), depBody = document.getElementById('depBody');
+  function paintDepLayout(){
+    if (depSub) depSub.textContent = SRC_SUB[depSrc] || SRC_SUB.wallet;
+    const showPool = depSrc === 'wallet';   // bank and exchange routes choose the pool once the money has landed
+    if (depPoolBtn){
+      depPoolBtn.style.display = showPool ? '' : 'none';
+      if (!showPool && depPoolMenu){ depPoolMenu.classList.remove('open'); depPoolBtn.setAttribute('aria-expanded','false'); }
+    }
+  }
+  // first screen: where is the money right now?
+  function showChooser(){
+    if (!depChoose || !depBody) return;
+    depChoose.hidden = false; depBody.hidden = true;
+    const md = ovD.querySelector('.modal'); if (md) md.classList.add('choosing');
+    if (depSub) depSub.textContent = 'Where is your money right now?';
+    depChoose.querySelectorAll('.dc-tag[data-tag]').forEach(t => { t.hidden = t.dataset.tag !== lastSrc; });
+    const first = depChoose.querySelector('.dc-card[data-src="' + (lastSrc || 'wallet') + '"]'); if (first) first.focus();
+  }
+  function hideChooser(){
+    if (!depChoose || !depBody) return;
+    depChoose.hidden = true; depBody.hidden = false;
+    const md = ovD.querySelector('.modal'); if (md) md.classList.remove('choosing');
+    paintDepLayout();
+  }
+  window.__balcoreDepChooser = showChooser;
+  window.__balcoreDepDirect = (src)=>{
+    const tab = document.querySelector('.src-toggle button[data-src="' + (src || 'wallet') + '"]'); if (tab) tab.click();
+    hideChooser();
+  };
+  if (depChoose) depChoose.querySelectorAll('.dc-card').forEach(c => c.addEventListener('click', ()=>{
+    const tab = document.querySelector('.src-toggle button[data-src="' + c.dataset.src + '"]'); if (tab) tab.click();
+    hideChooser();
+    const i = Array.from(depBody.querySelectorAll('input')).find(x => x.offsetParent !== null); if (i) i.focus();
+  }));
+  // small confirmation that survives the modal closing
+  let toastT = null;
+  function toast(msg){   // looked up lazily: the toast element sits at the end of the app shell
+    const el = document.getElementById('toast'), m = document.getElementById('toastMsg'); if(!el || !m) return;
+    m.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=> el.classList.remove('show'), 3600);
+  }
   document.querySelectorAll('.src-toggle button').forEach(btn=>{
     btn.addEventListener('click',()=>{
       document.querySelectorAll('.src-toggle button').forEach(b=>{b.classList.remove('on');b.setAttribute('aria-selected','false');});
       btn.classList.add('on'); btn.setAttribute('aria-selected','true');
-      const bank = btn.dataset.src === 'bank';
-      bankPanel.style.display = bank ? '' : 'none';
-      walletPanel.style.display = bank ? 'none' : '';
-      depSub.textContent = bank
-        ? 'Fund from your bank — arrives as USDC, ready to deposit.'
-        : 'Your deposit starts making markets at the next placement.';
+      depSrc = btn.dataset.src; lastSrc = depSrc;
+      if (bankPanel) bankPanel.style.display   = depSrc === 'bank'     ? '' : 'none';
+      if (exchPanel) exchPanel.style.display   = depSrc === 'exchange' ? '' : 'none';
+      if (walletPanel) walletPanel.style.display = depSrc === 'wallet' ? '' : 'none';
+      paintDepLayout();
+      if (depSrc === 'bank') paintBankPlacement();
     });
   });
 
@@ -696,7 +751,76 @@ window.__countUp = function(el){
     bankAmt.value = b.dataset.v; bankUpdate();
     document.querySelectorAll('#bankQuick button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
   }));
-  bankCta.addEventListener('click',()=>{ bankCta.disabled = true; bankCta.textContent = 'Opening Coinbase…'; });
+  bankCta.addEventListener('click',()=>{
+    if (bankCta.disabled) return;
+    bankCta.disabled = true; bankCta.textContent = 'Opening Coinbase\u2026';
+    const v = parseFloat((bankAmt.value||'').replace(/,/g,'')) || 0;
+    // real build: create the Coinbase Onramp session here (destination = this wallet, USDC on Avalanche) and persist
+    // the intent {amount, pool} server-side. The tracker below is what the user sees while the transfer is in flight.
+    setTimeout(()=>{
+      close(ovD);
+      startIncoming({ source: 'bank', usd: v, pool: depPoolKey });
+      toast('Bank transfer started. We\u2019ll let you know when it lands, then one tap deposits it.');
+      bankAmt.value=''; bankUpdate();
+      document.querySelectorAll('#bankQuick button').forEach(x=>x.classList.remove('on'));
+    }, 1100);
+  });
+
+  // ---- weekly placement helper: first Tuesday 00:00 UTC placement whose Mon 23:00 UTC cutoff is still ahead of `ms` ----
+  function placementAfter(ms){
+    const d = new Date(ms);
+    const plc = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0,0,0));
+    plc.setUTCDate(plc.getUTCDate() + (2 - plc.getUTCDay() + 7) % 7);
+    if (plc.getTime() - 3600000 <= ms) plc.setUTCDate(plc.getUTCDate() + 7);
+    return plc;
+  }
+  const dayStr = d => d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'});
+  function paintBankPlacement(){
+    const el = document.getElementById('bankPlacement');
+    if (el) el.textContent = dayStr(placementAfter(Date.now() + 86400000)) + ' \u00b7 once you confirm';
+  }
+  paintBankPlacement();
+
+  // ---- deposit from an exchange / another wallet: one deposit address and per-sender network hints ----
+  const EXCH_FROM = {
+    coinbase:  { s1:'In Coinbase, send USDC to this address', hint:"Pick Avalanche C-Chain if it's offered. Any network listed works.", rec:['avalanche'], off:[] },
+    robinhood: { s1:'In Robinhood, send USDC to this address', hint:'Robinhood has no Avalanche route yet, so pick Polygon, Arbitrum, Optimism, Base or Ethereum. Balcore brings it over.', rec:['polygon','arbitrum','optimism','base','ethereum'], off:['avalanche'] },
+    exchange:  { s1:'In your exchange or wallet, send USDC to this address', hint:"Pick Avalanche C-Chain if it's offered; otherwise any network listed. Polygon, Base and Arbitrum are cheapest.", rec:['avalanche'], off:[] }
+  };
+  let exchFrom = 'coinbase';
+  const exchCta = document.getElementById('exchCta');
+  function paintExch(){
+    const f = EXCH_FROM[exchFrom]; if (!f) return;
+    const s1 = document.getElementById('exchStep1'); if (s1) s1.textContent = f.s1;
+    const hn = document.getElementById('exchNetHint'); if (hn) hn.textContent = f.hint;
+    document.querySelectorAll('#recvNets .recv-net-chip').forEach(c=>{
+      c.classList.toggle('rec', f.rec.indexOf(c.dataset.net)!==-1);
+      c.classList.toggle('off', f.off.indexOf(c.dataset.net)!==-1);
+    });
+    if (exchCta){ exchCta.disabled = false; exchCta.textContent = "I've sent it \u00b7 watch for it"; }
+  }
+  document.querySelectorAll('.exch-from button').forEach(b => b.addEventListener('click', ()=>{
+    document.querySelectorAll('.exch-from button').forEach(x=>{ x.classList.remove('on'); x.setAttribute('aria-selected','false'); });
+    b.classList.add('on'); b.setAttribute('aria-selected','true'); exchFrom = b.dataset.from; paintExch();
+  }));
+  paintExch();
+  const recvCopy = document.getElementById('recvCopy');
+  if (recvCopy) recvCopy.addEventListener('click', ()=>{
+    const el = document.getElementById('recvAddr'); if (!el) return;
+    const a = (el.textContent||'').trim();
+    const done = ()=>{ recvCopy.textContent = 'Copied \u2713'; setTimeout(()=>{ recvCopy.textContent = 'Copy address'; }, 1600); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(a).then(done, done); else done();
+  });
+  // Nothing is deposited without the user, so there is nothing to consent to here: the tracker just starts watching.
+  if (exchCta) exchCta.addEventListener('click', ()=>{
+    if (exchCta.disabled) return;
+    exchCta.disabled = true; exchCta.textContent = 'Watching\u2026';
+    setTimeout(()=>{
+      close(ovD); startIncoming({ source: exchFrom, usd: null, pool: depPoolKey });
+      toast('Watching for your USDC. We\u2019ll let you know when it lands.');
+      paintExch();
+    }, 700);
+  });
 
   // withdraw logic
   const wAmt = document.getElementById('wdAmt'), wCta = document.getElementById('wdCta');
@@ -834,6 +958,349 @@ window.__countUp = function(el){
       const gv = document.querySelector('#viewOverview'); // ensure overview is visible so the user sees it
     }, 1100);
   });
+
+  // ---- incoming deposit tracker ----
+  // Two routes end here. Bank: lands in the user's wallet, one tap to deposit. Deposit address: lands as USDC in the
+  // user's Balcore account, where they choose how much goes into a pool. Either way the tracker says at every stage
+  // that nothing is earning until the money is in a pool.
+  const IN_SRC = {
+    bank:      { title:'Money on its way',                tag:'Bank transfer · via Coinbase', eta:'usually 1–3 business days', window:2*86400000, leadMs:86400000, landDelay:9000, via:'Via bank' },
+    coinbase:  { title:'Watching for USDC from Coinbase',  eta:'usually lands in minutes', window:15*60000, leadMs:0, landDelay:7000, via:'Via Coinbase',  landsOn:'Avalanche' },
+    robinhood: { title:'Watching for USDC from Robinhood', eta:'usually lands in minutes', window:15*60000, leadMs:0, landDelay:7000, via:'Via Robinhood', landsOn:'Polygon' },
+    exchange:  { title:'Watching for your USDC',           eta:'usually lands in minutes', window:15*60000, leadMs:0, landDelay:7000, via:'Via exchange',  landsOn:'Base' }
+  };
+  const IN_STEPS = { bank:['Sent','In transit','Landed','Deposited'], hold:['Sent','Landed','To Avalanche','In Balcore'] };
+  const DEMO_USDC = 2500;   // what "arrives" in the exchange demos (the real amount is whatever the chain shows)
+  const IN_FEE = 0.99;      // same illustrative on-ramp cost used in bankUpdate
+  const inT = document.getElementById('inTracker');
+  const itTitle = document.getElementById('itTitle'), itWindow = document.getElementById('itWindow'), itKeep = document.getElementById('itKeep');
+  const itAmt = document.getElementById('itAmt'), itPair = document.getElementById('itPair');
+  const itFill = document.getElementById('itFill'), itEta = document.getElementById('itEta'), itDate = document.getElementById('itDate');
+  const itSteps = document.querySelectorAll('#itSteps .wt-step'), itStepLabels = document.querySelectorAll('#itSteps .wt-step span:last-child');
+  const itChange = document.getElementById('itChange'), itDeposit = document.getElementById('itDeposit'), itNote = document.getElementById('itActNote');
+  const itMenu = document.getElementById('itMenu');
+  const whMiniSub = document.querySelector('#whMiniCard .wh-mini-sub'), whMiniTotal = document.getElementById('whMiniTotal');
+  let inIntent = null, inTimer = null, inLandTimer = null;
+  const usdcStr = n => fmt(n).replace('$','') + ' USDC';
+  const notEarning = txt => '<span class="wt-warn">Not earning yet</span> · ' + txt;
+  const routeOf = () => (inIntent && inIntent.source !== 'bank' ? 'hold' : 'bank');
+
+  // ---- USDC available in Balcore (arrived through the deposit address, not deployed) ----
+  const balCard = document.getElementById('balCard'), balCardTotal = document.getElementById('balCardTotal'), balCardSub = document.getElementById('balCardSub');
+  const balSend = document.getElementById('balSend'), balDeposit = document.getElementById('balDeposit');
+  const balBanner = document.getElementById('balBanner'), balBannerAmt = document.getElementById('balBannerAmt'), balUse = document.getElementById('balUse');
+  const depWalletLbl = document.getElementById('depWalletLbl');
+  function paintBal(){
+    if (balCard) balCard.hidden = BALC <= 0;
+    if (balCardTotal) balCardTotal.textContent = fmt(BALC);
+    if (balCardSub) balCardSub.textContent = 'USDC on Avalanche · deposit it, hold it, or send it to your wallet';
+    if (balSend) balSend.disabled = false;
+    if (balDeposit) balDeposit.disabled = false;
+    if (balBanner) balBanner.hidden = BALC <= 0;
+    if (balBannerAmt) balBannerAmt.textContent = usdcStr(BALC);
+    if (BALC <= 0 && useBalance) setUseBalance(false);
+  }
+  // quick picks: shares of a known amount (a landed transfer, the Balcore balance) or the usual round figures
+  function setQuickPicks(base){
+    const qs = document.querySelectorAll('#depQuick button');
+    const picks = base != null
+      ? [['25%', base*0.25],['50%', base*0.5],['75%', base*0.75],['All of it', base]]
+      : [['$1K',1000],['$5K',5000],['$10K',10000],[null,null]];
+    qs.forEach((b,i)=>{
+      const pick = picks[i]; if (!pick) return;
+      b.classList.remove('on');
+      if (pick[0] == null){ b.textContent = 'Max'; delete b.dataset.v; b.dataset.live = 'usdc'; return; }
+      delete b.dataset.live;
+      b.textContent = pick[0]; b.dataset.v = String(Math.round(pick[1]));
+    });
+  }
+  // switch the wallet deposit form between the connected wallet and the Balcore balance as the source of funds
+  function setUseBalance(on){
+    useBalance = !!on && BALC > 0;
+    if (balUse){ balUse.classList.toggle('on', useBalance); balUse.textContent = useBalance ? 'Using it ✓' : 'Use it'; }
+    if (depWalletLbl) depWalletLbl.innerHTML = (useBalance ? 'Balcore balance: ' : 'Wallet: ') + '<span class="mono" style="color:var(--text-2)">' + usdcStr(srcMax()) + '</span>';
+    setQuickPicks(useBalance ? BALC : null);
+    dUpdate();
+  }
+  if (balUse) balUse.addEventListener('click', ()=>{
+    setUseBalance(!useBalance);
+    if (useBalance){ dAmt.value = String(Math.round(BALC)); dUpdate(); }
+  });
+  function openDepositFromBalance(){
+    setModalActive(navDeposit); open(ovD);
+    if (window.__balcoreDepDirect) window.__balcoreDepDirect('wallet');
+    const autoBtn = document.querySelector('#depMode button[data-mode="auto"]'); if (autoBtn) autoBtn.click();
+    setUseBalance(true); dAmt.value = String(Math.round(BALC)); dUpdate();
+    document.querySelectorAll('#depQuick button').forEach(x=>x.classList.remove('on'));
+    dAmt.focus();
+  }
+  if (balDeposit) balDeposit.addEventListener('click', openDepositFromBalance);
+  // send the idle USDC back to the connected wallet (real build: a user-signed message the keeper submits)
+  if (balSend) balSend.addEventListener('click', ()=>{
+    if (BALC <= 0) return;
+    const amt = BALC;
+    balSend.disabled = true; if (balDeposit) balDeposit.disabled = true;
+    if (balCardSub) balCardSub.textContent = 'Sending ' + usdcStr(amt) + ' to your wallet…';
+    setTimeout(()=>{
+      BALC = 0; paintBal(); walletGained(amt);
+      if (whMiniSub) whMiniSub.textContent = usdcStr(amt) + ' just arrived from Balcore';
+      if (inIntent && inIntent.stage === 'arrived') endIncoming();
+      paintPortfolio();
+    }, 1200);
+  });
+
+  function inLabels(){
+    if (!inIntent) return;
+    const pl = DEP_POOLS[inIntent.pool], r = routeOf();
+    if (r === 'hold') itPair.textContent = (inIntent.usdc != null ? '≈ ' + usdcStr(inIntent.usdc) + ' · ' : '') + 'arrives as USDC in Balcore · you decide';
+    else itPair.textContent = '≈ ' + usdcStr(inIntent.usdc) + ' · arrives in your wallet · you decide';
+    if (r === 'hold') itDeposit.textContent = inIntent.stage === 'arrived' ? 'Deposit into a pool' : (inIntent.stage === 'done' ? 'Deposited ✓' : 'Arrives as USDC · you decide');
+    else itDeposit.textContent = inIntent.stage === 'landed' ? 'Deposit into a pool' : (inIntent.stage === 'done' ? 'Deposited ✓' : 'Arrives in your wallet · you decide');
+    if (pl && inIntent.stage !== 'done') itDeposit.title = 'Destination pool: ' + pl.name;
+    if (itMenu) itMenu.querySelectorAll('.pool-menu-item').forEach(m => m.classList.toggle('on', m.dataset.pool === inIntent.pool));
+  }
+  function inSetSteps(stage){   // stage = the step currently 'on' (0-3); everything before it is done; 4 = all done
+    itSteps.forEach((st,i)=>{ st.classList.toggle('done', i < stage); st.classList.toggle('on', i === stage); });
+  }
+  function inTick(){
+    if (!inIntent || inIntent.stage !== 'transit') return;
+    const src = IN_SRC[inIntent.source];
+    const elapsed = Math.max(0, Date.now() - inIntent.sentAt);
+    itFill.style.width = Math.min(88, Math.max(8, elapsed / src.window * 100)) + '%';
+    inSetSteps(1);
+    itEta.innerHTML = notEarning(src.eta);
+    itDate.textContent = 'earliest placement ' + dayStr(placementAfter(inIntent.sentAt + src.leadMs));
+  }
+  // deposit-address routes: the USDC reached the address on some listed chain; the keeper is moving it to Avalanche
+  function inForwarding(){
+    if (!inIntent || inIntent.stage !== 'transit') return;
+    const src = IN_SRC[inIntent.source];
+    inIntent.stage = 'forwarding'; clearInterval(inTimer);
+    if (inIntent.usdc == null) inIntent.usdc = DEMO_USDC;
+    itAmt.textContent = fmt(inIntent.usdc);
+    inSetSteps(2); itFill.style.width = '62%';
+    itTitle.textContent = 'USDC landed on ' + src.landsOn;
+    itEta.innerHTML = notEarning(src.landsOn === 'Avalanche' ? 'almost there' : 'moving to Avalanche via Circle, about a minute');
+    itDate.textContent = usdcStr(inIntent.usdc) + ' on ' + src.landsOn;
+    itNote.textContent = 'Nothing to do on your side. Once it is on Avalanche you can deposit it, hold it, or send it to your wallet.';
+    inLabels(); paintPortfolio();
+  }
+  // deposit-address route: arrived as USDC in the user's Balcore account, waiting for a decision
+  function inArrived(){
+    if (!inIntent || inIntent.stage !== 'forwarding') return;
+    inIntent.stage = 'arrived';
+    inSetSteps(3); itFill.style.width = '100%';
+    itTitle.textContent = 'USDC arrived in Balcore';
+    itWindow.hidden = true; itKeep.hidden = false; itKeep.textContent = 'Got it';
+    itEta.innerHTML = '<span class="wt-warn">Not earning yet</span> · available as USDC on Avalanche';
+    itDate.textContent = 'next placement ' + dayStr(placementAfter(Date.now()));
+    itChange.hidden = false; itChange.disabled = false; itChange.textContent = 'Send to wallet';
+    itDeposit.disabled = false; itDeposit.classList.add('ready');
+    itNote.textContent = 'It is yours to direct: deposit it into a pool in one tap, leave it as USDC, or send it back to your wallet.';
+    inLabels();
+    BALC += inIntent.usdc; paintBal(); paintPortfolio();
+  }
+  // bank route: landed in the connected wallet
+  function inLanded(){
+    if (!inIntent || inIntent.stage === 'landed' || inIntent.stage === 'done') return;
+    inIntent.stage = 'landed'; clearInterval(inTimer);
+    if (inIntent.usdc == null) inIntent.usdc = DEMO_USDC;
+    itAmt.textContent = inIntent.usd != null ? fmt(inIntent.usd) : fmt(inIntent.usdc);
+    inSetSteps(2); itFill.style.width = '96%';
+    itTitle.textContent = 'Your money landed';
+    itWindow.hidden = true; itKeep.hidden = false; itKeep.textContent = 'Keep in wallet';
+    const plc = dayStr(placementAfter(Date.now()));
+    itEta.innerHTML = '<span class="wt-warn">Landed · not earning until you deposit</span>';
+    itDate.textContent = 'next placement ' + plc;
+    itDeposit.disabled = false; itDeposit.classList.add('ready');
+    itNote.textContent = 'Put any amount of it into a pool in one tap: it earns supply APY right away, then joins the ' + plc + ' placement. Or keep it in your wallet.';
+    inLabels();
+    walletGained(inIntent.usdc);
+    if (whMiniSub){
+      if (!whMiniSub.dataset.prev) whMiniSub.dataset.prev = whMiniSub.textContent;
+      whMiniSub.textContent = usdcStr(inIntent.usdc) + ' just landed · not earning yet';
+      whMiniSub.style.color = 'var(--gold)';
+    }
+    paintPortfolio();
+  }
+  // USDC that reached the connected wallet outside the on-chain balance read (illustrative on-ramp arrivals)
+  function walletGained(usdc){
+    walletGain += usdc;
+    if (!useBalance) setUseBalance(false);
+    const bothBoxes = document.querySelectorAll('#depBothMode .amt-box');
+    if (bothBoxes[1]){ const b = bothBoxes[1].querySelector('.amt-top .mono'); if (b) b.textContent = usdcStr(srcMax()); }
+    if (whMiniTotal){ const cur = parseFloat((whMiniTotal.textContent||'').replace(/[^0-9.]/g,'')) || 0; whMiniTotal.textContent = fmt(cur + usdc); }
+  }
+  // o = { source, usd (null when unknown), pool, sentAt, stage, demo }
+  function startIncoming(o){
+    if (!inT) return;
+    clearInterval(inTimer); clearTimeout(inLandTimer);
+    const source = IN_SRC[o.source] ? o.source : 'bank', src = IN_SRC[source];
+    inIntent = { source: source, usd: o.usd == null ? null : o.usd, usdc: null, pool: o.pool || 'btc', sentAt: o.sentAt || Date.now(), stage: 'transit' };
+    if (inIntent.usd != null) inIntent.usdc = source === 'bank' ? inIntent.usd * IN_FEE : inIntent.usd;   // exchange transfers arrive 1:1
+    const r = routeOf();
+    itAmt.textContent = inIntent.usd != null ? fmt(inIntent.usd) : 'USDC';
+    itTitle.textContent = src.title; itWindow.hidden = false; itKeep.hidden = true;
+    itWindow.textContent = r === 'bank' ? src.tag : 'Arrives as USDC in Balcore · any listed network';
+    itStepLabels.forEach((el,i)=>{ el.textContent = IN_STEPS[r][i]; });
+    itDeposit.disabled = true; itDeposit.classList.remove('ready');
+    itChange.hidden = true; itChange.disabled = false; itChange.textContent = 'Send to wallet';
+    itNote.textContent = r === 'hold'
+      ? 'It will show up as available USDC in Balcore. Deposit it, hold it, or send it to your wallet, whenever you like. Nothing is earning until it is in a pool.'
+      : 'The USDC lands in your own wallet. Nothing moves into a pool until you choose how much.';
+    if (itMenu) itMenu.classList.remove('open');
+    itChange.setAttribute('aria-expanded','false');
+    inLabels(); inSetSteps(1); inT.hidden = false; inTick();
+    inTimer = setInterval(inTick, 30000);
+    if (o.stage === 'forwarding') inForwarding();
+    else if (o.stage === 'landed') inLanded();
+    else if (o.stage === 'arrived'){ inForwarding(); inArrived(); }
+    else if (o.demo !== false){   // demo: the waits are compressed to seconds
+      if (r === 'bank') inLandTimer = setTimeout(inLanded, src.landDelay);
+      else inLandTimer = setTimeout(()=>{ inForwarding(); inLandTimer = setTimeout(inArrived, src.landsOn === 'Avalanche' ? 2500 : 4500); }, src.landDelay);
+    }
+    paintPortfolio();
+  }
+  function endIncoming(){
+    if (inT) inT.hidden = true;
+    clearInterval(inTimer); clearTimeout(inLandTimer); inIntent = null;
+    if (whMiniSub && whMiniSub.dataset.prev){ whMiniSub.textContent = whMiniSub.dataset.prev; whMiniSub.style.color = ''; }
+    paintPortfolio();
+  }
+  // secondary button: change the destination pool while in flight; after arrival it sends to wallet
+  if (itChange) itChange.addEventListener('click', e=>{
+    e.stopPropagation(); if (itChange.disabled) return;
+    if (inIntent && inIntent.stage === 'arrived'){ if (balSend) balSend.click(); return; }
+    const o = itMenu.classList.toggle('open'); itChange.setAttribute('aria-expanded', o?'true':'false');
+  });
+  if (itMenu) itMenu.querySelectorAll('.pool-menu-item').forEach(m => m.addEventListener('click', ()=>{
+    if (!inIntent) return; inIntent.pool = m.dataset.pool; inLabels();
+    itMenu.classList.remove('open'); itChange.setAttribute('aria-expanded','false');
+  }));
+  document.addEventListener('click', e=>{
+    if (itMenu && itMenu.classList.contains('open') && !itMenu.contains(e.target) && e.target !== itChange){
+      itMenu.classList.remove('open'); itChange.setAttribute('aria-expanded','false');
+    }
+  });
+  // "Keep in wallet" (bank) / "Got it" (hold): dismiss the tracker; the money stays where it is
+  if (itKeep) itKeep.addEventListener('click', ()=>{ endIncoming(); });
+  // primary: bank route opens the wallet deposit flow pre-filled; hold route opens it with the Balcore balance
+  if (itDeposit) itDeposit.addEventListener('click', ()=>{
+    if (itDeposit.disabled || !inIntent) return;
+    if (inIntent.stage === 'arrived'){ openDepositFromBalance(); return; }
+    if (inIntent.stage !== 'landed') return;
+    setModalActive(navDeposit); open(ovD);
+    if (window.__balcoreDepDirect) window.__balcoreDepDirect('wallet');
+    const autoBtn = document.querySelector('#depMode button[data-mode="auto"]'); if (autoBtn) autoBtn.click();
+    setUseBalance(false); setQuickPicks(inIntent.usdc);
+    dAmt.value = String(Math.round(inIntent.usdc)); dUpdate();
+    dAmt.focus();
+  });
+  // deposit confirmed: settle the Balcore balance if it was the source, and close the loop on the tracker
+  if (ackGo) ackGo.addEventListener('click', ()=>{
+    const fromBal = useBalance, v = parseFloat((dAmt.value||'').replace(/,/g,'')) || 0;
+    const pl = DEP_POOLS[depPoolKey];
+    const trk = inIntent && (inIntent.stage === 'landed' || (inIntent.stage === 'arrived' && fromBal));
+    if (!fromBal && !trk) return;
+    if (inIntent && trk) inIntent.stage = 'done';
+    setTimeout(()=>{
+      if (fromBal){ BALC = Math.max(0, BALC - v); paintBal(); setUseBalance(false); }
+      if (trk){
+        inSetSteps(4); itFill.style.width = '100%';
+        itTitle.textContent = 'Deposited'; itKeep.hidden = true;
+        itEta.textContent = 'Starts making markets at the next placement';
+        itDate.textContent = fmt(v) + ' · ' + (pl ? pl.name : '');
+        itDeposit.textContent = 'Deposited ✓'; itDeposit.disabled = true; itChange.disabled = true;
+        itNote.textContent = '✓ Added to ' + (pl ? pl.name : 'your pool') + '.';
+        setTimeout(endIncoming, 2600);
+      }
+      paintPortfolio();
+    }, 1500);
+  });
+  paintBal();
+
+  // ---- portfolio: everything the user holds through Balcore, and where it is ----
+  const ovPf = document.getElementById('ovPortfolio');
+  const numOf = el => el ? (parseFloat(el.dataset && el.dataset.countup) || parseFloat((el.textContent||'').replace(/[^0-9.]/g,'')) || 0) : 0;
+  const fmtShort = n => n >= 1e6 ? '$' + (n/1e6).toFixed(2) + 'M' : (n >= 1e3 ? '$' + (n/1e3).toFixed(1) + 'K' : fmt(n));
+  const setTxtId = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  function paintPortfolio(){
+    const pools = numOf(document.querySelector('.balance')), wallet = numOf(whMiniTotal), bal = BALC, total = pools + wallet + bal;
+    setTxtId('pfTotal', fmt(total)); setTxtId('pfBucketPools', fmt(pools)); setTxtId('pfBucketWallet', fmt(wallet)); setTxtId('pfBucketBal', fmt(bal));
+    const bbRow = document.getElementById('pfBucketBalRow'); if (bbRow) bbRow.hidden = bal <= 0;
+    setTxtId('wmTotal', fmtShort(total)); setTxtId('wmPools', fmtShort(pools)); setTxtId('wmWallet', fmtShort(wallet)); setTxtId('wmBal', fmtShort(bal));
+    const wmRow = document.getElementById('wmBalRow'); if (wmRow) wmRow.hidden = bal <= 0;
+    // by pool, from the positions list and the share panel
+    const shares = {};
+    document.querySelectorAll('#ovShare .share-row').forEach(r => { const pct = r.querySelector('.share-pct'); if (pct) shares[r.dataset.coins] = pct.textContent; });
+    const pfPools = document.getElementById('pfPools');
+    if (pfPools) pfPools.innerHTML = Array.from(document.querySelectorAll('.pos[data-pair]')).map(p => {
+      const ic = p.querySelector('.pair-ic'); const share = shares[p.dataset.coins];
+      return '<div class="pt-row">' + (ic ? ic.outerHTML : '') + '<div class="pt-row-body"><b>' + p.dataset.pair + '</b><span>' + p.dataset.hold + (share ? ' · ' + share + ' of the pool' : '') + '</span></div><div class="pt-row-v">' + p.dataset.value + '<small>' + p.dataset.yield + ' / yr · ' + p.dataset.eall + ' all time</small></div></div>';
+    }).join('');
+    // by asset, from the sidebar donut
+    const pfAssets = document.getElementById('pfAssets');
+    if (pfAssets) pfAssets.innerHTML = Array.from(document.querySelectorAll('.pf-seg')).map(seg =>
+      '<div class="pt-row"><span class="pt-dot" style="background:' + seg.dataset.color + '"></span><div class="pt-row-body"><b>' + seg.dataset.name + '</b><span>' + seg.dataset.pct + ' of your wallet</span></div><div class="pt-row-v">' + seg.dataset.val + '</div></div>'
+    ).join('');
+    // in motion: anything the trackers are showing
+    const motion = [];
+    if (tracker && !tracker.hidden) motion.push({ t: 'Withdrawal in progress', s: wtPair.textContent, v: wtAmt.textContent });
+    if (inT && !inT.hidden && inIntent) motion.push({ t: itTitle.textContent, s: itPair.textContent, v: itAmt.textContent });
+    const secEl = document.getElementById('pfMotionSec'), motEl = document.getElementById('pfMotion');
+    if (secEl) secEl.hidden = motion.length === 0;
+    if (motEl){
+      motEl.hidden = motion.length === 0;
+      motEl.innerHTML = motion.map(m => '<div class="pt-row"><span class="pt-dot" style="background:var(--gold)"></span><div class="pt-row-body"><b>' + m.t + '</b><span>' + m.s + '</span></div><div class="pt-row-v">' + m.v + '</div></div>').join('');
+    }
+  }
+  function openPortfolio(){ if (!ovPf) return; paintPortfolio(); open(ovPf); }
+  if (ovPf){
+    ovPf.addEventListener('click', e=>{ if (e.target === ovPf) close(ovPf); });
+    const pfX = ovPf.querySelector('[data-close]'); if (pfX) pfX.addEventListener('click', ()=> close(ovPf));
+    addEventListener('keydown', e=>{ if (e.key === 'Escape') close(ovPf); });
+    ovPf.querySelectorAll('.pt-bucket-act').forEach(b => b.addEventListener('click', ()=>{
+      close(ovPf);
+      if (b.dataset.pf === 'withdraw'){ navWithdraw.click(); return; }
+      if (b.dataset.pf === 'balance'){ openDepositFromBalance(); return; }
+      const ovWl = document.getElementById('ovWallet'); if (ovWl) open(ovWl);
+    }));
+  }
+  const sidePf = document.getElementById('sidePortfolio');
+  if (sidePf){
+    sidePf.addEventListener('click', openPortfolio);
+    sidePf.addEventListener('keydown', e=>{ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openPortfolio(); } });
+  }
+  const portfolioBtn = document.getElementById('portfolioBtn');
+  if (portfolioBtn) portfolioBtn.addEventListener('click', openPortfolio);
+  const pfMenuBtn = document.getElementById('pfMenuBtn');
+  if (pfMenuBtn) pfMenuBtn.addEventListener('click', openPortfolio);
+  const pfDeposited = document.getElementById('pfDeposited'), ovDepBrk = document.getElementById('ovDepBreak');
+  if (pfDeposited && ovDepBrk) pfDeposited.addEventListener('click', ()=>{ close(ovPf); open(ovDepBrk); });
+  // "Ahead of just holding" opens the balance breakdown
+  const edgeCard = document.getElementById('edgeCard'), ovBalBrk = document.getElementById('ovBalBreak');
+  if (edgeCard && ovBalBrk){
+    edgeCard.addEventListener('click', ()=> open(ovBalBrk));
+    edgeCard.addEventListener('keydown', e=>{ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(ovBalBrk); } });
+  }
+  // last week's fees by pool: settled figures; the card opens the Activity view where each settlement is listed
+  const feesCard = document.getElementById('feesByPoolCard');
+  if (feesCard){
+    const goActivity = ()=>{ const a = document.querySelector('.nav-item[data-view="activity"]'); if (a) a.click(); };
+    feesCard.addEventListener('click', goActivity);
+    feesCard.addEventListener('keydown', e=>{ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); goActivity(); } });
+  }
+  const wbtn = document.getElementById('walletBtn');
+  if (wbtn) wbtn.addEventListener('click', paintPortfolio);   // the menu summary is fresh when it opens
+  paintPortfolio();
+  // demo states: ?incoming (bank transfer in flight) · ?landed (bank money in the wallet, one tap)
+  //              ?exchange (watching) · ?forwarding (USDC moving to Avalanche) · ?arrived (waiting in Balcore)
+  const inQ = location.search;
+  if (inQ.indexOf('incoming') !== -1) startIncoming({ source:'bank', usd:5000, pool:'btc', sentAt: Date.now() - 20*3600000, demo:false });
+  else if (inQ.indexOf('landed') !== -1) startIncoming({ source:'bank', usd:5000, pool:'btc', sentAt: Date.now() - 2*86400000, stage:'landed' });
+  else if (inQ.indexOf('exchange') !== -1) startIncoming({ source:'coinbase', usd:null, pool:'btc', demo:false });
+  else if (inQ.indexOf('forwarding') !== -1) startIncoming({ source:'robinhood', usd:null, pool:'gold', stage:'forwarding' });
+  else if (inQ.indexOf('arrived') !== -1) startIncoming({ source:'robinhood', usd:null, pool:'btc', stage:'arrived' });
 
   // settlement date in withdraw modal
   (function(){
@@ -1054,6 +1521,20 @@ window.__countUp = function(el){
 
 (function(){var pf=document.getElementById("poolFees"),t=document.getElementById("poolFeesToggle");if(pf&&t)t.addEventListener("click",function(){var o=pf.classList.toggle("open");t.setAttribute("aria-expanded",o?"true":"false");});})();
 (function(){var d=document.getElementById("wdDetails"),t=document.getElementById("wdDetToggle");if(d&&t)t.addEventListener("click",function(){var o=d.classList.toggle("open");t.setAttribute("aria-expanded",o?"true":"false");});})();
+
+// ---------- layout width toggle (centred vs wide), remembered per browser ----------
+(function(){
+  var wt=document.getElementById("widthToggle"), app=document.querySelector(".app"); if(!wt||!app) return;
+  function apply(m){
+    app.classList.toggle("wide", m==="wide");
+    wt.querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.dataset.w===m); });
+  }
+  var saved="fit"; try{ saved=localStorage.getItem("balcoreWidth")||"fit"; }catch(e){}
+  apply(saved);
+  wt.querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click",function(){ apply(b.dataset.w); try{ localStorage.setItem("balcoreWidth", b.dataset.w); }catch(e){} });
+  });
+})();
 
 (function(){
   var KEY="balcoreTheme", root=document.documentElement,

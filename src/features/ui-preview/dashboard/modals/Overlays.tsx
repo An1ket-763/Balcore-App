@@ -229,6 +229,60 @@ export default function Overlays() {
 </div>
 
 
+<div className="overlay" id="ovPortfolio" role="dialog" aria-modal="true" aria-labelledby="pfTitle">
+  <div className="modal">
+    <div className="m-head">
+      <h2 id="pfTitle">Your portfolio</h2>
+      <button className="m-close" data-close={true} aria-label="Close">✕</button>
+    </div>
+    <p className="m-sub">Everything you hold through Balcore, and where it is right now.</p>
+
+    <div className="pt-total">
+      <div className="pt-total-v" id="pfTotal">—</div>
+      <div className="pt-total-k">pools, Balcore account and wallet together</div>
+    </div>
+
+    <div className="pt-buckets">
+      <div className="pt-bucket">
+        <span className="pt-dot" style={{background: "var(--mint)"}}></span>
+        <div className="pt-bucket-body"><b>Working in pools</b><span id="pfPoolsSub">Earning · 28.5% / yr net</span></div>
+        <div className="pt-bucket-v" id="pfBucketPools">—</div>
+        <button className="pt-bucket-act" data-pf="withdraw" type="button">Withdraw</button>
+      </div>
+      <div className="pt-bucket" id="pfBucketBalRow" hidden={true}>
+        <span className="pt-dot" style={{background: "var(--gold)"}}></span>
+        <div className="pt-bucket-body"><b>Available in Balcore</b><span>USDC that arrived · not earning</span></div>
+        <div className="pt-bucket-v" id="pfBucketBal">—</div>
+        <button className="pt-bucket-act" data-pf="balance" type="button">Deposit</button>
+      </div>
+      <div className="pt-bucket">
+        <span className="pt-dot" style={{background: "var(--violet)"}}></span>
+        <div className="pt-bucket-body"><b>In your wallet</b><span>Not deposited yet</span></div>
+        <div className="pt-bucket-v" id="pfBucketWallet">—</div>
+        <button className="pt-bucket-act" data-pf="wallet" type="button">See assets</button>
+      </div>
+    </div>
+
+    <div className="pt-sec" id="pfMotionSec" hidden={true}>In motion</div>
+    <div className="pt-rows" id="pfMotion" hidden={true}></div>
+
+    <div className="pt-sec" style={{display: "flex", justifyContent: "space-between", alignItems: "baseline"}}>By pool <button className="wh-mini-link" id="pfDeposited" type="button" style={{background: "none", border: "0", padding: "0", cursor: "pointer", font: "inherit", fontSize: "11px", fontWeight: 600, letterSpacing: "0", textTransform: "none"}}>What you deposited →</button></div>
+    <div className="pt-rows" id="pfPools"></div>
+
+    <div className="pt-sec">By asset</div>
+    <div className="pt-rows" id="pfAssets"></div>
+
+    <div className="pt-sec">Earnings</div>
+    <div className="m-rows">
+      <div className="m-row"><span className="k">All time</span><span className="v mint">+$512,400</span></div>
+      <div className="m-row"><span className="k">This month</span><span className="v mint">+$52,400</span></div>
+      <div className="m-row"><span className="k">Last week</span><span className="v mint">+$13,120</span></div>
+    </div>
+    <div className="m-foot">Live figures and proofs on the <a id="pfExplorer" href="/explorer" style={{color: "var(--violet)"}}>Balcore Explorer</a>.</div>
+  </div>
+</div>
+
+
 <div className="overlay" id="ovDeposit" role="dialog" aria-modal="true" aria-labelledby="depTitle">
   <div className="modal dep-modal">
     <div className="m-head">
@@ -237,6 +291,27 @@ export default function Overlays() {
     </div>
     <p className="m-sub">Your deposit starts making markets at the next placement.</p>
 
+    
+    <div className="dep-choose" id="depChoose" hidden={true}>
+      <button className="dc-card" data-src="wallet" type="button">
+        <span className="dc-ic"><svg width="18" height="18" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="4" width="12" height="9" rx="1.8" stroke="currentColor" strokeWidth="1.4"/><path d="M11 8.5h1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M11.5 4V3a1.5 1.5 0 0 0-1.9-1.4L4 3" stroke="currentColor" strokeWidth="1.4"/></svg></span>
+        <span className="dc-body"><b>In my crypto wallet</b><span>USDC, Bitcoin, gold or Tesla you already hold in the connected wallet.</span><span className="dc-meta"><span className="dc-tag">Ready now</span><span className="dc-tag">Next placement Tuesday</span><span className="dc-tag hi" data-tag="wallet" hidden={true}>Last used</span></span></span>
+        <span className="dc-chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3 7.5 6 4.5 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
+      </button>
+      <button className="dc-card" data-src="bank" type="button">
+        <span className="dc-ic"><svg width="18" height="18" viewBox="0 0 17 17" fill="none"><path d="M8.5 2 15 5H2l6.5-3ZM3 5v7M6.3 5v7M10.7 5v7M14 5v7M2 14.5h13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
+        <span className="dc-body"><b>In my bank account</b><span>Pay in dollars through Coinbase. Lands as USDC in your wallet; then you choose how much goes into a pool.</span><span className="dc-meta"><span className="dc-tag">1–3 business days</span><span className="dc-tag">Coinbase checkout</span><span className="dc-tag hi" data-tag="bank" hidden={true}>Last used</span></span></span>
+        <span className="dc-chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3 7.5 6 4.5 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
+      </button>
+      <button className="dc-card" data-src="exchange" type="button">
+        <span className="dc-ic"><svg width="18" height="18" viewBox="0 0 17 17" fill="none"><path d="M8.5 2v8.5M5.5 7.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 10.5v2.5a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg></span>
+        <span className="dc-body"><b>On an exchange or another app</b><span>Coinbase, Robinhood, Kraken or any wallet. Send USDC to your Balcore address; it lands here as USDC.</span><span className="dc-meta"><span className="dc-tag">Minutes</span><span className="dc-tag">Any network</span><span className="dc-tag">No gas needed</span><span className="dc-tag hi" data-tag="exchange" hidden={true}>Last used</span></span></span>
+        <span className="dc-chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3 7.5 6 4.5 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
+      </button>
+      <div className="dep-choose-foot">Nothing moves until you confirm, and withdrawals always go to your own wallet.</div>
+    </div>
+
+    <div id="depBody">
     <div className="src-toggle" role="tablist" aria-label="Funding source">
       <button className="on" data-src="wallet" role="tab" aria-selected="true">
         <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="4" width="12" height="9" rx="1.8" stroke="currentColor" strokeWidth="1.4" /><path d="M11 8.5h1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><path d="M11.5 4V3a1.5 1.5 0 0 0-1.9-1.4L4 3" stroke="currentColor" strokeWidth="1.4" /></svg>
@@ -245,6 +320,10 @@ export default function Overlays() {
       <button data-src="bank" role="tab" aria-selected="false">
         <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M8.5 2 15 5H2l6.5-3ZM3 5v7M6.3 5v7M10.7 5v7M14 5v7M2 14.5h13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
         From bank
+      </button>
+      <button data-src="exchange" role="tab" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 17 17" fill="none"><path d="M8.5 2v8.5M5.5 7.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 10.5v2.5a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+        From exchange
       </button>
     </div>
 
@@ -262,17 +341,18 @@ export default function Overlays() {
       </div>
 
       <div className="onramp-flow">
-        <div className="onramp-step"><span className="onramp-num">1</span><div><b>Pay from your bank</b><span>Secure checkout on Coinbase · they handle it</span></div></div>
+        <div className="onramp-step"><span className="onramp-num">1</span><div><b>Pay from your bank</b><span>Secure checkout on Coinbase · 1–3 business days</span></div></div>
         <div className="onramp-arrow">↓</div>
-        <div className="onramp-step"><span className="onramp-num">2</span><div><b>USDC lands in your wallet</b><span>On Avalanche · you stay in control</span></div></div>
+        <div className="onramp-step"><span className="onramp-num">2</span><div><b>USDC lands in your wallet</b><span>On Avalanche · not earning until you confirm</span></div></div>
         <div className="onramp-arrow">↓</div>
-        <div className="onramp-step"><span className="onramp-num">3</span><div><b>Deposit into Balcore</b><span>Start making markets</span></div></div>
+        <div className="onramp-step"><span className="onramp-num">3</span><div><b>Then you choose</b><span>Put any amount into a pool in one tap. We’ll let you know when it lands.</span></div></div>
       </div>
 
       <div className="m-rows">
         <div className="m-row"><span className="k">You receive</span><span className="v" id="bankReceive">—</span></div>
         <div className="m-row"><span className="k">Est. fee</span><span className="v mint">Low · shown by Coinbase</span></div>
-        <div className="m-row"><span className="k">Arrives</span><span className="v">~1–3 days · bank transfer</span></div>
+        <div className="m-row"><span className="k">Arrives</span><span className="v">~1–3 business days · <span className="wt-warn">not earning yet</span></span></div>
+        <div className="m-row"><span className="k">Earliest placement</span><span className="v" id="bankPlacement">—</span></div>
       </div>
 
       <div className="notice green">
@@ -285,6 +365,48 @@ export default function Overlays() {
     </div>
 
     
+    
+    <div id="depExchPanel" style={{display: "none"}}>
+      <div className="exch-from" role="tablist" aria-label="Sending from">
+        <button className="on" data-from="coinbase" role="tab" aria-selected="true" type="button">Coinbase</button>
+        <button data-from="robinhood" role="tab" aria-selected="false" type="button">Robinhood</button>
+        <button data-from="exchange" role="tab" aria-selected="false" type="button">Other exchange or wallet</button>
+      </div>
+
+      <div className="recv-card">
+        
+        <div className="recv-qr" role="img" aria-label="QR code of your Balcore deposit address">
+          <svg viewBox="0 0 29 29" shapeRendering="crispEdges"><path d="M0 0.5h7m3 0h3m2 0h2m2 0h1m2 0h7m-29 1h1m5 0h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m4 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h2m3 0h2m2 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h4m5 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m6 0h3m1 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m1 0h2m1 0h8m3 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h3m9 0h1m-21 1h1m1 0h5m2 0h5m1 0h1m1 0h2m1 0h1m1 0h5m-27 1h1m1 0h2m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1m2 0h1m1 0h5m1 0h2m-28 1h1m1 0h5m3 0h2m2 0h1m1 0h1m3 0h1m1 0h3m-26 1h2m2 0h2m4 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m-28 1h1m2 0h1m1 0h3m2 0h1m2 0h3m1 0h1m3 0h1m1 0h1m-23 1h3m5 0h1m6 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h2m-27 1h1m1 0h1m1 0h3m1 0h1m3 0h3m4 0h1m1 0h3m-26 1h1m3 0h1m4 0h2m1 0h1m8 0h1m2 0h1m2 0h1m-26 1h1m3 0h1m1 0h1m1 0h1m1 0h9m2 0h1m1 0h4m-29 1h1m2 0h2m2 0h1m1 0h1m9 0h1m1 0h1m2 0h2m2 0h1m-29 1h1m4 0h2m1 0h2m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m4 0h2m-27 1h1m1 0h1m5 0h1m3 0h1m11 0h1m2 0h1m-28 1h1m2 0h2m1 0h1m1 0h3m2 0h1m1 0h1m4 0h8m-20 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m3 0h2m2 0h1m-29 1h7m2 0h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h1m-28 1h1m5 0h1m1 0h1m1 0h3m1 0h1m3 0h3m3 0h2m1 0h2m-29 1h1m1 0h3m1 0h1m1 0h5m2 0h4m1 0h5m1 0h3m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h4m3 0h1m2 0h2m2 0h2m1 0h2m-29 1h1m1 0h3m1 0h1m1 0h2m3 0h4m1 0h1m3 0h3m1 0h2m-28 1h1m5 0h1m2 0h2m1 0h1m2 0h1m3 0h2m2 0h1m3 0h1m-28 1h7m1 0h1m2 0h1m3 0h1m1 0h1m6 0h3" stroke="#0b0b16" strokeWidth="1" fill="none"/></svg>
+        </div>
+        <div className="recv-body">
+          <div className="recv-k">Your Balcore deposit address · same on every network below</div>
+          <div className="recv-addr" id="recvAddr">0xdeA75f3B19c0E52a8D4b7C6e1F9a2b3dc4Bf9db3</div>
+          <div className="recv-actions">
+            <button className="recv-copy" id="recvCopy" type="button">Copy address</button>
+            <span className="recv-net">USDC only</span>
+          </div>
+          <div className="recv-nets" id="recvNets" aria-label="Networks this address accepts USDC on">
+            <span className="recv-net-chip" data-net="avalanche">Avalanche</span><span className="recv-net-chip" data-net="ethereum">Ethereum</span><span className="recv-net-chip" data-net="polygon">Polygon</span><span className="recv-net-chip" data-net="base">Base</span><span className="recv-net-chip" data-net="arbitrum">Arbitrum</span><span className="recv-net-chip" data-net="optimism">Optimism</span>
+          </div>
+          <div className="recv-hint" id="exchNetHint">Pick Avalanche C-Chain if it's offered. Any network listed works.</div>
+        </div>
+      </div>
+
+      <div className="onramp-flow">
+        <div className="onramp-step"><span className="onramp-num">1</span><div><b id="exchStep1">In Coinbase, send USDC to this address</b><span>Scan the code or paste the address. Balcore brings it to Avalanche for you.</span></div></div>
+        <div className="onramp-arrow">↓</div>
+        <div className="onramp-step"><span className="onramp-num">2</span><div><b>It lands as USDC in your Balcore account</b><span>Usually within minutes. Then you choose how much goes into a pool.</span></div></div>
+      </div>
+
+      <div className="notice green">
+        <svg width="14" height="14" viewBox="0 0 17 17" fill="none"><path d="M8.5 2 14 4.3v4c0 3.2-2.2 5.6-5.5 6.7C5.2 13.9 3 11.5 3 8.3v-4L8.5 2Z" stroke="#2ee6a8" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+        <span>Your own account on Avalanche: funds only ever go into a pool you pick or back to your wallet. Not earning until it's in a pool.</span>
+      </div>
+
+      <button className="cta" id="exchCta">I've sent it · watch for it</button>
+      <div className="m-foot">Illustrative flow. Networks and timings depend on the sending app.</div>
+    </div>
+
     <div id="depWalletPanel">
     <button className="pool-pick pool-pick-btn" id="depPoolBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
       <div className="pair-ic" id="depPoolIc"><span className="coin c-btc">₿</span><span className="coin c-usd">$</span></div>
@@ -299,14 +421,20 @@ export default function Overlays() {
     </div>
 
     <div className="dep-mode" id="depMode" role="tablist" aria-label="Deposit type">
-      <button className="on" data-mode="auto" role="tab" aria-selected="true" type="button">Convert USDC</button>
-      <button data-mode="both" role="tab" aria-selected="false" type="button">Provide both tokens</button>
+      <button className="on" data-mode="auto" role="tab" aria-selected="true" type="button">USDC only · we split it</button>
+      <button data-mode="both" role="tab" aria-selected="false" type="button">Both tokens</button>
+    </div>
+
+    
+    <div className="bal-banner" id="balBanner" hidden={true}>
+      <span><b id="balBannerAmt">0 USDC</b> is sitting in Balcore, not earning. Deposit it from there, no wallet signature needed.</span>
+      <button id="balUse" type="button">Use it</button>
     </div>
 
     
     <div id="depAutoMode">
       <div className="amt-box">
-        <div className="amt-top"><span>Amount</span><span>Wallet: <span className="mono" style={{color: "var(--text-2)"}} id="depUsdcWalletBal">{balancesLoading ? "Loading…" : `${fmtAmt(balances.USDC)} USDC`}</span></span></div>
+        <div className="amt-top"><span>Amount</span><span id="depWalletLbl">Wallet: <span className="mono" style={{color: "var(--text-2)"}} id="depUsdcWalletBal">{balancesLoading ? "Loading…" : `${fmtAmt(balances.USDC)} USDC`}</span></span></div>
         <div className="amt-row">
           <input id="depAmt" inputMode="decimal" placeholder="0.00" aria-label="Deposit amount in dollars" />
           <span className="unit">USD</span>
@@ -388,6 +516,7 @@ export default function Overlays() {
       <button className="cta" id="depDoneClose">Done</button>
     </div>
     <div className="m-foot">Illustrative figures. Returns vary with market conditions.</div>
+    </div>
     </div>
   </div>
 </div>

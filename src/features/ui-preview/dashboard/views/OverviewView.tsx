@@ -61,7 +61,7 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
             <span className="greet-muted">{greeting}, </span>
             <span className="greet-name">{identity}</span>
           </h1>
-          <p className="page-subtitle">Here's what's happening with your positions today</p>
+          <p className="page-subtitle">Here's how your market-making is going.</p>
         </header>
 
 
@@ -85,6 +85,34 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
             <button className="wt-act wt-claim" id="wtClaim" type="button" disabled={true}>Claim to wallet</button>
           </div>
           <div className="wt-actnote" id="wtActNote">You can change your mind any time before it settles — put it back and your liquidity keeps earning.</div>
+        </div>
+
+        
+        <div className="wd-tracker incoming" id="inTracker" hidden={true} aria-live="polite">
+          <div className="wt-head">
+            <div className="wt-title"><span className="live-dot"></span><span id="itTitle">Money on its way</span></div>
+            <span className="wt-window" id="itWindow">Bank transfer · via Coinbase</span>
+            <button className="wt-cancel" id="itKeep" type="button" hidden={true}>Keep in wallet</button>
+          </div>
+          <div className="wt-main"><span className="wt-amt" id="itAmt">$0</span><span className="wt-pair" id="itPair"></span></div>
+          <div className="wt-steps" id="itSteps">
+            <div className="wt-step"><span className="wt-dot"></span><span>Sent</span></div>
+            <div className="wt-step"><span className="wt-dot"></span><span>In transit</span></div>
+            <div className="wt-step"><span className="wt-dot"></span><span>Landed</span></div>
+            <div className="wt-step"><span className="wt-dot"></span><span>Deposited</span></div>
+          </div>
+          <div className="wt-bar"><div className="wt-fill" id="itFill" style={{width: "8%"}}></div></div>
+          <div className="wt-foot"><span id="itEta">—</span><span id="itDate">—</span></div>
+          <div className="wt-actions">
+            <button className="wt-act wt-keep" id="itChange" type="button" aria-haspopup="listbox" aria-expanded="false">Change pool</button>
+            <button className="wt-act wt-claim" id="itDeposit" type="button" disabled={true}>Deposit into Bitcoin / Dollar</button>
+          </div>
+          <div className="pool-menu" id="itMenu" role="listbox" aria-label="Pool for this deposit">
+            <button className="pool-menu-item on" role="option" data-pool="btc" type="button"><span className="pair-ic"><span className="coin c-btc">₿</span><span className="coin c-usd">$</span></span><span className="pmi-body"><span className="pmi-name">Bitcoin / Dollar</span><span className="pmi-sub">30.0% APY · capped 30%</span></span></button>
+            <button className="pool-menu-item" role="option" data-pool="tsla" type="button"><span className="pair-ic"><span className="coin c-tsla">T</span><span className="coin c-usd">$</span></span><span className="pmi-body"><span className="pmi-name">Tesla / Dollar</span><span className="pmi-sub">25.5% APY · capped 30%</span></span></button>
+            <button className="pool-menu-item" role="option" data-pool="gold" type="button"><span className="pair-ic"><span className="coin c-gold">Au</span><span className="coin c-usd">$</span></span><span className="pmi-body"><span className="pmi-name">Gold / Dollar</span><span className="pmi-sub">28.4% APY · capped 30%</span></span></button>
+          </div>
+          <div className="wt-actnote" id="itActNote">The USDC lands in your own wallet. Nothing moves into the pool until you confirm.</div>
         </div>
 
         
@@ -132,35 +160,59 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
 
           
           <div className="pf-side">
-            <div className="card pf-mini accent-mint">
-              <div className="pf-df">
-                <div className="pf-df-item">
-                  <div className="card-label" style={{display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px"}}>Your deposit <button className="dep-detail-link" id="depDetailLink" type="button">Details →</button></div>
-                  <div className="pf-df-v" id="depCount">$2,332,720</div>
-                </div>
-                <div className="pf-df-item">
-                  <div className="card-label" style={{color: "var(--mint)"}}>Fees collected</div>
-                  <div className="pf-df-v mint" id="feeCount">+$52,400</div>
-                </div>
-              </div>
-            </div>
-            <div className="card pf-mini wh-mini accent-gold" id="whMiniCard" role="button" tabIndex={0} aria-label="View assets in your wallet">
+            
+            <div className="card pf-mini wh-mini accent-mint" id="edgeCard" role="button" tabIndex={0} aria-label="How your balance grew versus just holding">
               <div className="pf-ap-head">
-                <div className="card-label">In your wallet</div>
+                <div className="card-label">Ahead of just holding</div>
                 <span className="wh-mini-link">Details →</span>
               </div>
               <div className="wh-mini-main">
-                <span className="pf-df-v" id="whMiniTotal">
-                  {balancesLoading ? (
-                    <span className="is-loading">Loading balance…</span>
-                  ) : (
-                    `$${walletTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}`
-                  )}
-                </span>
-                <span className="wh-mini-coins"><span className="coin c-btc">₿</span><span className="coin c-gold">Au</span><span className="coin c-usd">$</span><span className="coin c-tsla">T</span></span>
+                <span className="pf-df-v mint" id="edgeVal">+$555,720</span>
               </div>
-              <div className="wh-mini-sub">4 assets · not deposited yet</div>
+              <div className="edge-bars" aria-hidden="true">
+                <div className="edge-row"><span className="edge-k">Holding</span><span className="edge-bar"><i style={{width: "80%"}}></i></span><span className="edge-v">$2.29M</span></div>
+                <div className="edge-row"><span className="edge-k">Balcore</span><span className="edge-bar is-bal"><i style={{width: "100%"}}></i></span><span className="edge-v">$2.85M</span></div>
+              </div>
+              <div className="wh-mini-sub">same coins since you deposited · fees included</div>
             </div>
+            
+            <div className="card pf-mini wh-mini accent-gold" id="feesByPoolCard" role="button" tabIndex={0} aria-label="Where last week's fees came from, see activity">
+              <div className="pf-ap-head">
+                <div className="card-label">Fees by pool</div>
+                <span className="wh-mini-link" style={{whiteSpace: "nowrap"}}>Activity →</span>
+              </div>
+              <div className="edge-bars fees-bars" aria-label="Fees by pool">
+                <div className="edge-row"><span className="edge-k"><span className="coin c-btc">₿</span>Bitcoin</span><span className="edge-bar is-bal"><i style={{width: "100%"}}></i></span><span className="edge-v">$7,600</span></div>
+                <div className="edge-row"><span className="edge-k"><span className="coin c-tsla">T</span>Tesla</span><span className="edge-bar is-bal"><i style={{width: "42%"}}></i></span><span className="edge-v">$3,220</span></div>
+                <div className="edge-row"><span className="edge-k"><span className="coin c-gold">Au</span>Gold</span><span className="edge-bar is-bal"><i style={{width: "30%"}}></i></span><span className="edge-v">$2,300</span></div>
+              </div>
+              <div className="wh-mini-sub"><span className="mono" style={{color: "var(--mint)"}}>+$13,120</span> last week · paid in dollars</div>
+            </div>
+            
+            <div id="whMiniCard" hidden={true}>
+              <span id="whMiniTotal">
+                {balancesLoading
+                  ? "Loading balance…"
+                  : `$${walletTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
+              </span>
+              <span className="wh-mini-sub">4 assets · not deposited yet</span>
+            </div>
+          </div>
+        </div>
+
+        
+        <div className="bal-bar" id="balCard" hidden={true}>
+          <div className="bal-bar-main">
+            <span className="coin c-usd">$</span>
+            <div style={{minWidth: "0"}}>
+              <div className="bal-bar-title">Available in Balcore <span className="wt-warn">· not earning</span></div>
+              <div className="bal-bar-sub" id="balCardSub">USDC on Avalanche · deposit it, hold it, or send it to your wallet</div>
+            </div>
+          </div>
+          <div className="bal-bar-amt" id="balCardTotal">$0</div>
+          <div className="bal-actions">
+            <button className="bal-act" id="balSend" type="button">Send to wallet</button>
+            <button className="bal-act primary" id="balDeposit" type="button">Deposit into a pool</button>
           </div>
         </div>
 
@@ -169,7 +221,7 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
           <h2>Markets you're making</h2>
         </div>
 
-        <div className="pos" data-pair="Bitcoin / Dollar" data-coins="btc" data-hold="7.88 BTC \u00b7 662,000 USDC" data-value="$1,325,000" data-yield="30.0%" data-e7="+$7,640" data-eall="+$104,900" data-status="ok" data-status-t="In range" data-range="$58,500 \u2013 $69,500" data-rebal="4 days ago">
+        <div className="pos" data-pair="Bitcoin / Dollar" data-coins="btc" data-hold="7.88 BTC · 662,000 USDC" data-value="$1,325,000" data-yield="30.0%" data-e7="+$7,640" data-eall="+$104,900" data-status="ok" data-status-t="In range" data-range="$58,500 – $69,500" data-rebal="4 days ago">
           <div className="pair-ic"><span className="coin c-btc">₿</span><span className="coin c-usd">$</span></div>
           <div><div className="name">Bitcoin / Dollar</div><div className="sub">7.88 BTC · 662,000 USDC</div></div>
           <div className="col"><div className="k">Value</div><div className="v">$1,325,000</div></div>
@@ -179,7 +231,7 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
           <button className="manage" data-details={true}>Details</button>
         </div>
 
-        <div className="pos" data-pair="Tesla / Dollar" data-coins="tsla" data-hold="1,595 TSLA \u00b7 328,600 USDC" data-value="$657,200" data-yield="25.5%" data-e7="+$3,220" data-eall="+$48,200" data-status="ok" data-status-t="In range" data-range="$298 \u2013 $352" data-rebal="6 days ago">
+        <div className="pos" data-pair="Tesla / Dollar" data-coins="tsla" data-hold="1,595 TSLA · 328,600 USDC" data-value="$657,200" data-yield="25.5%" data-e7="+$3,220" data-eall="+$48,200" data-status="ok" data-status-t="In range" data-range="$298 – $352" data-rebal="6 days ago">
           <div className="pair-ic"><span className="coin c-tsla">T</span><span className="coin c-usd">$</span></div>
           <div><div className="name">Tesla / Dollar</div><div className="sub">1,595 TSLA · 328,600 USDC</div></div>
           <div className="col"><div className="k">Value</div><div className="v">$657,200</div></div>
@@ -189,7 +241,7 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
           <button className="manage" data-details={true}>Details</button>
         </div>
 
-        <div className="pos flag" data-pair="Gold / Dollar" data-coins="gold" data-hold="82.0 XAUt \u00b7 217,300 USDC" data-value="$436,730" data-yield="28.4%" data-e7="+$2,330" data-eall="+$32,900" data-status="rb" data-status-t="Rebalancing" data-range="Re-arming \u00b7 closes Mon" data-rebal="in progress">
+        <div className="pos flag" data-pair="Gold / Dollar" data-coins="gold" data-hold="82.0 XAUt · 217,300 USDC" data-value="$436,730" data-yield="28.4%" data-e7="+$2,330" data-eall="+$32,900" data-status="rb" data-status-t="Rebalancing" data-range="Re-arming · closes Mon" data-rebal="in progress">
           <div className="pair-ic"><span className="coin c-gold">Au</span><span className="coin c-usd">$</span></div>
           <div><div className="name">Gold / Dollar</div><div className="sub">82.0 XAUt · 217,300 USDC</div></div>
           <div className="col"><div className="k">Value</div><div className="v">$436,730</div></div>

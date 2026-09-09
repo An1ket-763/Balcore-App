@@ -107,6 +107,38 @@ export default function Topnav({
               />
             </svg>
           </button>
+          <div className="width-toggle" id="widthToggle" role="group" aria-label="Layout width">
+            <button data-w="fit" className="on" title="Centered" aria-label="Centered width">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <rect x="4" y="3" width="8" height="10" rx="1.4" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+            </button>
+            <button data-w="wide" title="Wide" aria-label="Wide width">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <rect x="1.5" y="3" width="13" height="10" rx="1.4" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+            </button>
+          </div>
+          <span className="tb-sep" aria-hidden="true"></span>
+          <button
+            className="swap-btn"
+            id="portfolioBtn"
+            aria-label="Portfolio"
+            title="Your portfolio: everything you hold through Balcore, and where it is"
+          >
+            <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
+              <rect x="2" y="5" width="13" height="9.5" rx="2" stroke="currentColor" strokeWidth="1.5" />
+              <path
+                d="M6 5V3.8A1.3 1.3 0 0 1 7.3 2.5h2.4A1.3 1.3 0 0 1 11 3.8V5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <path d="M2 9h13" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M7.5 9v1.6h2V9" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+            </svg>
+            <span className="btn-label">Portfolio</span>
+          </button>
           <button
             className="swap-btn"
             id="swapBtn"

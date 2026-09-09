@@ -93,6 +93,46 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
             </div>
           )}
         </div>
+        <div className="wm-sum" id="wmSum">
+          <div className="wm-sum-row">
+            <span>Through Balcore</span>
+            <b id="wmTotal">—</b>
+          </div>
+          <div className="wm-sum-row sub">
+            <span>In pools · earning</span>
+            <b id="wmPools">—</b>
+          </div>
+          <div className="wm-sum-row sub" id="wmBalRow" hidden={true}>
+            <span>Available · not earning</span>
+            <b id="wmBal">—</b>
+          </div>
+          <div className="wm-sum-row sub">
+            <span>In wallet · not deposited</span>
+            <b id="wmWallet">—</b>
+          </div>
+        </div>
+        <button
+          className="wallet-menu-item"
+          id="pfMenuBtn"
+          role="menuitem"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(false);
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
+            <rect x="2" y="5" width="13" height="9.5" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            <path
+              d="M6 5V3.8A1.3 1.3 0 0 1 7.3 2.5h2.4A1.3 1.3 0 0 1 11 3.8V5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <path d="M2 9h13" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M7.5 9v1.6h2V9" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+          </svg>
+          Portfolio details
+        </button>
         <button
           className="wallet-menu-item"
           id="copyAddr"
