@@ -1410,6 +1410,13 @@ html[data-theme="light"] .card{box-shadow:0 1px 2px rgba(23,22,48,.06),0 12px 30
     overflow-y:auto;-webkit-overflow-scrolling:touch
   }
   .bridge-modal .m-head{margin-inline:-16px;padding:0 16px 9px;background:transparent}
+  /* deposit + withdraw also go full-screen and keep the header transparent */
+  .modal.dep-modal,.modal.wd-modal{
+    height:100dvh;max-height:none;border-radius:0;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+    overflow-y:auto;-webkit-overflow-scrolling:touch
+  }
+  .dep-modal .m-head,.wd-modal .m-head{margin-inline:-16px;padding:0 16px 9px;background:transparent}
 }
 
 /* ===== donut + legend stack cleanly, legend never truncates ===== */
