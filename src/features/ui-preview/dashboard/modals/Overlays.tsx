@@ -394,7 +394,7 @@ export default function Overlays() {
 
 
 <div className="overlay" id="ovWithdraw" role="dialog" aria-modal="true" aria-labelledby="wdTitle">
-  <div className="modal">
+  <div className="modal wd-modal">
     <div className="m-head">
       <h2 id="wdTitle">Withdraw</h2>
       <button className="m-close" data-close={true} aria-label="Close">✕</button>
