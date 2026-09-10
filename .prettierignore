@@ -6,3 +6,10 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+
+# Generated from the balcore-contracts forge artifacts by
+# src/lib/balcore/abi/extract-abi.sh — reformatting would fight the generator.
+src/lib/balcore/abi/bank.ts
+src/lib/balcore/abi/vault.ts
+src/lib/balcore/abi/sequencer.ts
+src/lib/balcore/abi/pair.ts

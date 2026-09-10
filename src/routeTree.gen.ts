@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExplorerRouteImport } from './routes/explorer'
+import { Route as DevBalcoreRouteImport } from './routes/dev/balcore'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const ExplorerRoute = ExplorerRouteImport.update({
   path: '/explorer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevBalcoreRoute = DevBalcoreRouteImport.update({
+  id: '/dev/balcore',
+  path: '/dev/balcore',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
+  '/dev/balcore': typeof DevBalcoreRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
+  '/dev/balcore': typeof DevBalcoreRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
+  '/dev/balcore': typeof DevBalcoreRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/explorer'
+  fullPaths: '/' | '/explorer' | '/dev/balcore'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explorer'
-  id: '__root__' | '/' | '/explorer'
+  to: '/' | '/explorer' | '/dev/balcore'
+  id: '__root__' | '/' | '/explorer' | '/dev/balcore'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExplorerRoute: typeof ExplorerRoute
+  DevBalcoreRoute: typeof DevBalcoreRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExplorerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/balcore': {
+      id: '/dev/balcore'
+      path: '/dev/balcore'
+      fullPath: '/dev/balcore'
+      preLoaderRoute: typeof DevBalcoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExplorerRoute: ExplorerRoute,
+  DevBalcoreRoute: DevBalcoreRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
