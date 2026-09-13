@@ -3,7 +3,10 @@ import { useAccount } from "wagmi";
 import { useTokenBalances } from "../data/balances";
 import { getTokenPrices } from "../data/prices";
 import { useActivity } from "../data/activity";
+import { formatUnits } from "viem";
 import { shortenAddress } from "../walletUtils";
+import { useClaimYield } from "@/lib/balcore";
+import { explorerBase } from "@/lib/wagmi";
 
 function useGreeting(displayName?: string) {
   const { address } = useAccount();
@@ -34,6 +37,76 @@ function useGreeting(displayName?: string) {
 type OverviewViewProps = {
   displayName?: string;
 };
+
+/**
+ * Claimable yield, and the button that claims it.
+ *
+ * Replaces the auto-compound switch, which advertised a choice the contracts do
+ * not offer: there is no compound-or-claim setting anywhere in v1. Settled yield
+ * sits in the bank until the holder calls `claimYield()` themselves
+ * (BalCoreBank.sol:1294), and nothing reinvests it. A toggle promising otherwise
+ * was the most misleading control on this screen.
+ *
+ * Disabled with the SPECIFIC reason rather than merely greyed, because
+ * `NothingToClaim` has three causes and the common one — shares earn only from
+ * the week AFTER they activate — reads as a bug if the UI just says "nothing".
+ */
+function ClaimCard() {
+  const claim = useClaimYield("btc");
+  const amount = Number(formatUnits(claim.claimable.usdc, 6));
+  const reason = claim.disabledReason;
+  const busy = claim.isBusy;
+  const done = claim.stage === "done";
+
+  const label = claim.needsSwitch
+    ? "Switch to Avalanche"
+    : claim.stage === "preparing"
+      ? "Checking…"
+      : claim.stage === "signing"
+        ? "Confirm in wallet…"
+        : claim.stage === "confirming"
+          ? "Claiming…"
+          : done
+            ? "Claimed ✓"
+            : "Claim to wallet";
+
+  return (
+    <div id="feeClaim">
+      <div className="eng-row" style={{ padding: "8px 0" }}>
+        <span className="k">Available to claim</span>
+        <span className="v mint" id="feeClaimAmt">
+          {amount > 0
+            ? `+$${amount.toLocaleString("en-US", { maximumFractionDigits: 2 })}`
+            : "$0.00"}
+        </span>
+      </div>
+      <button
+        className={`fee-claim-btn${done ? " claimed" : ""}`}
+        id="feeClaimBtn"
+        disabled={busy || done || (!claim.needsSwitch && Boolean(reason))}
+        onClick={() => (claim.needsSwitch ? claim.switchNetwork() : void claim.claim())}
+      >
+        {label}
+      </button>
+      {reason && !done ? <div className="fee-foot" style={{ marginTop: 6 }}>{reason}</div> : null}
+      {claim.error ? (
+        <div className="fee-foot" style={{ marginTop: 6, color: "#e0554b" }}>{claim.error}</div>
+      ) : null}
+      {claim.txHash ? (
+        <div className="fee-foot" style={{ marginTop: 6 }}>
+          <a
+            href={`${explorerBase}/tx/${claim.txHash}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "var(--violet)" }}
+          >
+            View transaction
+          </a>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function OverviewView({ displayName }: OverviewViewProps) {
   const { greeting, identity } = useGreeting(displayName);
@@ -303,29 +376,13 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
           <div style={{fontFamily: "var(--mono)", fontSize: "28px", color: "var(--mint)", margin: "4px 0 6px"}}>+$13,120</div>
 
           
-          <div className="fee-toggle-row">
-            <div className="fee-toggle-label">
-              <span className="fee-toggle-title">Auto-compound</span>
-              <span className="fee-toggle-sub" id="feeToggleSub">Fees reinvest into your pools automatically</span>
-            </div>
-            <button className="fee-switch-knob on" id="feeToggle" role="switch" aria-checked="true" aria-label="Auto-compound fees">
-              <span className="fee-switch-thumb"></span>
-            </button>
-          </div>
 
           <div className="eng-row" style={{padding: "8px 0"}}><span className="k">Fees collected</span><span className="v" style={{color: "var(--mint)"}}>+$14,300</span></div>
           <div className="eng-row" style={{padding: "8px 0"}}><span className="k">IL covered first</span><span className="v" style={{color: "var(--gold)"}}>−$1,180</span></div>
 
-          <div id="feeCompound">
-            <div className="eng-row" style={{padding: "8px 0"}}><span className="k">Reinvested into your pools</span><span className="v mint">+$13,120</span></div>
-          </div>
+          <ClaimCard />
 
-          <div id="feeClaim" style={{display: "none"}}>
-            <div className="eng-row" style={{padding: "8px 0"}}><span className="k">Available to claim</span><span className="v mint" id="feeClaimAmt">+$13,120</span></div>
-            <button className="fee-claim-btn" id="feeClaimBtn">Claim to wallet</button>
-          </div>
-
-          <div className="fee-foot" id="feeFoot">Settles Tuesdays 00:00 UTC · auto-compounded, nothing to do.</div>
+          <div className="fee-foot" id="feeFoot">Settles Tuesdays 00:00 UTC · claim it to your wallet whenever you like. Nothing reinvests on its own.</div>
         </div>
 
         <div className="card soft hoverpop">

@@ -110,6 +110,8 @@ export interface DepositHook extends WriteMachine {
   split: UsdcSplit | null;
   /** The legs that will actually be deposited (after the split, in usdcOnly). */
   legs: { tokenA: bigint; usdc: bigint };
+  /** The connected (or inspected) wallet's balances, in each token's atoms. */
+  walletBalances: { tokenA: bigint; usdc: bigint };
 
   /** The matched-amount calculator, at the live price. */
   matchTokenAForUsdc: (usdc: bigint) => bigint;
@@ -761,6 +763,7 @@ export function useDeposit(
     anchoredPrice8,
     split,
     legs,
+    walletBalances: { tokenA: tokenABalance, usdc: usdcBalance },
     matchTokenAForUsdc: (usdc: bigint) =>
       pool ? matchedAmount({ usdc }, price8, pool.scaleA2B) : 0n,
     matchUsdcForTokenA: (tokenA: bigint) =>

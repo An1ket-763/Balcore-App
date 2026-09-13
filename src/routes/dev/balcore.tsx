@@ -28,6 +28,11 @@ import { ClientOnly } from "@tanstack/react-router";
 import { useAccount } from "wagmi";
 import { parseUnits, type Address } from "viem";
 import Web3Providers from "@/providers/Web3Providers";
+import DepositPanel from "@/features/ui-preview/dashboard/modals/DepositPanel";
+import WithdrawPanel from "@/features/ui-preview/dashboard/modals/WithdrawPanel";
+// The panels are styled entirely by dashboard.css; without it they render as
+// unstyled divs and "does it look right" cannot be answered here.
+import "@/features/ui-preview/dashboard/dashboard.css";
 import {
   BALCORE_DEPLOYED,
   BALCORE_POOLS,
@@ -347,6 +352,66 @@ function PoolWrites({ poolKey }: { poolKey: PoolKey }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* The real modals, rendered AS a live holder                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Both production panels, outside the dashboard's connect gate.
+ *
+ * This is the only way to see what wallet B's withdrawal actually looks like:
+ * the dashboard is behind connect + onboarding, and nobody testing holds B's
+ * key. `inspectAs` makes the panels read and dry-run as that address while
+ * refusing to sign, so the pending-request state, the frozen basket and the
+ * run-mode Fast-Track can all be checked against the chain rather than guessed.
+ */
+function LiveModals() {
+  const address = useInspectAddress();
+  const inspecting = useIsInspecting();
+  const as = inspecting && address ? { inspectAs: address } : {};
+
+  return (
+    <>
+      <h2
+        style={{
+          font: "600 14px/1.4 system-ui",
+          color: "#2ee6a8",
+          margin: "32px 0 4px",
+          borderTop: "1px solid #23233a",
+          paddingTop: 24,
+        }}
+      >
+        the production modals, rendered {inspecting ? `as ${address}` : "for the connected wallet"}
+      </h2>
+      <p style={{ font: "400 12px/1.6 system-ui", color: "#8a8a9e", margin: "0 0 16px" }}>
+        The same components `Overlays.tsx` mounts. Read-only while inspecting: the buttons refuse to
+        sign, so this is safe to poke at.
+      </p>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+          gap: 24,
+          alignItems: "start",
+        }}
+      >
+        <div
+          className="overlay open"
+          style={{ position: "static", background: "none", padding: 0 }}
+        >
+          <DepositPanel {...as} />
+        </div>
+        <div
+          className="overlay open"
+          style={{ position: "static", background: "none", padding: 0 }}
+        >
+          <WithdrawPanel {...as} />
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Shell                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -387,12 +452,15 @@ function Harness() {
       {!BALCORE_DEPLOYED ? (
         <pre style={mono}>Balcore is not deployed on this network. Set VITE_CHAIN_ENV=mainnet.</pre>
       ) : (
-        BALCORE_POOLS.map((p) => (
-          <div key={p.key}>
-            <PoolReads poolKey={p.key} />
-            <PoolWrites poolKey={p.key} />
-          </div>
-        ))
+        <>
+          {BALCORE_POOLS.map((p) => (
+            <div key={p.key}>
+              <PoolReads poolKey={p.key} />
+              <PoolWrites poolKey={p.key} />
+            </div>
+          ))}
+          <LiveModals />
+        </>
       )}
     </main>
   );
