@@ -4,7 +4,7 @@
  * GENERATED — do not edit by hand. Regenerate with:
  *   BALCORE_CONTRACTS=<repo> src/lib/balcore/abi/extract-abi.sh
  *
- * Source: balcore-contracts@c190dc0 out/BalCoreSequencer.sol/BalCoreSequencer.json
+ * Source: balcore-contracts@e419b74 out/BalCoreSequencer.sol/BalCoreSequencer.json
  * Filter: select(.type=="function" and (.name | IN("minPositionValueB","allocCapBps","borrowCapBps","borrowHfFloor")))
  */
 

@@ -4,7 +4,7 @@
  * GENERATED — do not edit by hand. Regenerate with:
  *   BALCORE_CONTRACTS=<repo> src/lib/balcore/abi/extract-abi.sh
  *
- * Source: balcore-contracts@c190dc0 out/BalCoreBank.sol/BalCoreBank.json
+ * Source: balcore-contracts@e419b74 out/BalCoreBank.sol/BalCoreBank.json
  * Filter: select((.type=="function" and (.name | IN("positions","getClaimableYield","withdrawRequests","withdrawBasket",
 "previewWithdraw","depositValue","isActivated","totalShares","currentEpoch",
 "epochs","getCurrentEpoch","totalAssets","LAUNCH_TVL_CAP","tvlCapActive",

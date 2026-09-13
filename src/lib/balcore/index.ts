@@ -12,11 +12,14 @@
  *   config/   addresses, pool registry, the not-deployed guard
  *   abi/      `as const` fragments GENERATED from the forge artifacts
  *   math.ts   pure ports of the contracts' own formulas
+ *   errors.ts selector → user message, for every revert the writes can hit
  *   reads/    view hooks
+ *   writes/   stage-machine hooks that move funds, plus the PURE pre-checks
  *
- * Nothing in here can move funds: this commit is config, ABI, math and reads.
- * The write hooks (deposit / requestWithdraw / fastTrack) land separately and
- * should follow the stage-machine shape of `data/bridgeBurn.ts`.
+ * The writes follow the stage-machine shape of `data/bridgeBurn.ts` and every
+ * one of them dry-runs through `simulateContract` before the wallet opens. The
+ * logic that decides whether a button may be pressed lives in `writes/checks.ts`
+ * as pure functions, so it is unit-tested rather than trusted.
  */
 
 export {
@@ -75,3 +78,64 @@ export {
   type FastTrackAvailability,
   type UseFastTrackAvailabilityResult,
 } from "./reads/useFastTrackAvailability";
+
+/* ---- errors ---- */
+
+export {
+  decodeBalcoreError,
+  balcoreErrorMessage,
+  walletMessage,
+  knownErrorSelectors,
+  erc20ErrorAbi,
+  type DecodedBalcoreError,
+  type WriteContext,
+} from "./errors";
+
+/* ---- writes ---- */
+
+export {
+  // Pure pre-checks and previews — exported because the panels render their
+  // messages directly and the tests import them without a DOM.
+  checkDeposit,
+  checkRequestWithdraw,
+  checkExecuteWithdraw,
+  checkCancelWithdraw,
+  checkClaimYield,
+  checkFastTrack,
+  valueDeposit,
+  splitUsdcForDeposit,
+  minTokenAForPairing,
+  previewFastTrack,
+  withdrawStatus,
+  secondsUntilReady,
+  formatCountdown,
+  summarise,
+  CANCEL_CONSEQUENCE,
+  DRIFT_WARN_BPS,
+  type CheckIssue,
+  type CheckResult,
+  type DepositMode,
+  type DepositCheckInput,
+  type DepositValuation,
+  type UsdcSplit,
+  type WithdrawStatus,
+  type FastTrackPreview,
+} from "./writes/checks";
+
+export {
+  planDepositStages,
+  nextStage,
+  isBusyStage,
+  useBalcoreNetwork,
+  useAllowances,
+  INSPECT_ONLY_ERROR,
+  type WriteStage,
+  type WriteMachine,
+  type DryRunResult,
+  type InspectOptions,
+} from "./writes/shared";
+
+export { useDeposit, type DepositHook, type DepositInput } from "./writes/useDeposit";
+export { useWithdraw, type WithdrawHook } from "./writes/useWithdraw";
+export { useClaimYield, type ClaimYieldHook } from "./writes/useClaimYield";
+export { useFastTrack, NO_IL_COVER_WARNING, type FastTrackHook } from "./writes/useFastTrack";

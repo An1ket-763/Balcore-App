@@ -4,7 +4,7 @@
  * GENERATED — do not edit by hand. Regenerate with:
  *   BALCORE_CONTRACTS=<repo> src/lib/balcore/abi/extract-abi.sh
  *
- * Source: balcore-contracts@c190dc0 out/ILBRouter.sol/ILBPair.json
+ * Source: balcore-contracts@e419b74 out/ILBRouter.sol/ILBPair.json
  * Filter: select(.type=="function" and .name=="getActiveId")
  */
 

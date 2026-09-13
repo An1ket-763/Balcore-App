@@ -75,10 +75,16 @@ VAULT_FNS='"tvl","cachedTVL","lastValidPrice","rangeLower","rangeUpper",
 "lastRebalanceTimestamp","pendingAllocBps","vaultState","feeDialsPacked","SCALE_A2B"'
 VAULT_EVENTS='"Rebalanced","FeesHarvested","WeeklySettlement","PendingAllocSet"'
 
+# ALL custom errors, for the same reason the bank carries them — and one that is
+# specific to the trader: the BANK's user writes call into it
+# (`TRADER.fetchAndCheckPrice()`, `TRADER.syncTVL()`), so a trader revert
+# bubbles out of a bank call. Without these entries a stale oracle surfaces as
+# an un-nameable selector on `deposit` / `requestWithdraw` / `cancelWithdraw` /
+# `fastTrackWithdraw`, which is exactly the revert a user most needs named.
 emit "BalCoreVault.sol/BalCoreVault.json" \
-  "select((.type==\"function\" and (.name | IN($VAULT_FNS))) or (.type==\"event\" and (.name | IN($VAULT_EVENTS))))" \
+  "select((.type==\"function\" and (.name | IN($VAULT_FNS))) or .type==\"error\" or (.type==\"event\" and (.name | IN($VAULT_EVENTS))))" \
   "balcoreVaultAbi" "vault.ts" \
-  " * BalCoreVault (the \"trader\") — LP range, reserves, debt and fee dials.\n *\n * Read-only surface: every state change here is keeper- or admin-gated."
+  " * BalCoreVault (the \"trader\") — LP range, reserves, debt and fee dials.\n *\n * Read-only surface: every state change here is keeper- or admin-gated.\n *\n * Carries EVERY custom error the contract can revert with: the bank's user\n * writes call into the trader, so these selectors come back from bank calls."
 
 # ---------------------------------------------------------------------------
 # BalCoreSequencer — the risk dials the vault reads its bounds from.
