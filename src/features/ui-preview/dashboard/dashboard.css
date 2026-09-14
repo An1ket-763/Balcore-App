@@ -1027,6 +1027,10 @@ html[data-theme="light"] .lead-you-k{border-color:rgba(91,72,214,.45);background
 .name-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .onb-ghost{background:none;border:0;color:var(--text-3);font-size:13px;font-weight:600;cursor:pointer;padding:8px 2px}
 .onb-ghost:hover{color:var(--text-2)}
+/* sign-in: secondary "Connect a wallet" button under the email/Google CTA */
+.onb-cta-alt{margin-top:10px;background:transparent;border:1px solid var(--line);color:var(--text);box-shadow:none}
+.onb-cta-alt:hover{background:var(--wash-04)}
+.onb-cta + .onb-ghost{margin-top:10px}
 @media (prefers-reduced-motion:reduce){.onb-spinner{animation:none}}
 /* risk acknowledgement — final login gate */
 .onb-risk{text-align:left}
@@ -1461,14 +1465,6 @@ html[data-theme="light"] .card{box-shadow:0 1px 2px rgba(23,22,48,.06),0 12px 30
 .tb-sep{width:1px;height:22px;background:var(--line-soft);margin:0 2px;flex-shrink:0}
 @media (max-width:560px){.tb-sep{display:none}}
 .wt-warn{color:var(--gold);font-weight:600}
-
-/* --- top bar width toggle --- */
-.width-toggle{display:none;align-items:center;gap:2px;background:var(--sh-25);border:1px solid var(--line-soft);border-radius:9px;padding:2px}
-@media (min-width:1500px){.width-toggle{display:inline-flex}}
-.width-toggle button{display:flex;align-items:center;justify-content:center;width:30px;height:26px;border:0;background:none;color:var(--text-3);border-radius:7px;cursor:pointer;transition:background .12s,color .12s}
-.width-toggle button.on{background:rgba(139,123,245,.16);color:var(--text)}
-.width-toggle button:not(.on):hover{color:var(--text-2)}
-.app.wide .main{max-width:1600px}
 
 /* --- sidebar portfolio card is now a button --- */
 .side-pf{cursor:pointer;transition:border-color .18s var(--ease),box-shadow .18s var(--ease)}

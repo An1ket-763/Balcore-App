@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
+import { usePrivy } from "@privy-io/react-auth";
 // @ts-ignore
 import "./dashboard.css";
 import Onboarding from "./Onboarding";
@@ -15,6 +16,7 @@ const ONBOARD_KEY = "balcore-onboarded";
 const NAME_KEY = "balcore-display-name";
 
 export default function DashboardApp() {
+  const { ready: privyReady, authenticated } = usePrivy();
   const { isConnected, address, status } = useAccount();
   const [onboarded, setOnboarded] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -33,7 +35,12 @@ export default function DashboardApp() {
     } catch {}
   }, [address]);
 
-  const ready = isConnected && onboarded;
+  const ready = authenticated && isConnected && onboarded;
+
+  // Signing out (Privy logout) always returns to the onboarding gate.
+  useEffect(() => {
+    if (privyReady && !authenticated && onboarded) setOnboarded(false);
+  }, [privyReady, authenticated, onboarded]);
 
   useEffect(() => {
     if (isResuming) return;
@@ -50,6 +57,12 @@ export default function DashboardApp() {
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
+
+  // Privy restores the session from storage on load; until it has, we don't
+  // know whether to show the dashboard or the sign-in gate.
+  if (!privyReady) {
+    return <Splash />;
+  }
 
   // Keep the dashboard mounted while the wallet resumes/switches network,
   // otherwise the imperative script listeners are lost on remount.
@@ -100,6 +113,16 @@ export default function DashboardApp() {
         <span id="toastMsg"></span>
       </div>
       <DashboardScriptsMount />
+    </div>
+  );
+}
+
+/** Blank branded backdrop while the session is being restored. */
+function Splash() {
+  return (
+    <div className="onb" aria-busy="true">
+      <div className="onb-bg" aria-hidden="true"></div>
+      <div className="onb-spinner" aria-label="Loading"></div>
     </div>
   );
 }

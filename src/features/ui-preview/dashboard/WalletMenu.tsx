@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useAccount, useBalance, useDisconnect } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
+import { useExportWallet, useLogout, usePrivy } from "@privy-io/react-auth";
 import { shortenAddress } from "./walletUtils";
 import { defaultChain, explorerBase } from "@/lib/wagmi";
+import { isEmbeddedWalletUser, signInEmail } from "@/lib/privy";
 
 /**
- * Top-right wallet button + dropdown, driven by the real wagmi connection.
+ * Top-right wallet button + dropdown. The address/balance come from wagmi; the
+ * session (sign out, email, key export) comes from Privy.
  */
 export default function WalletMenu({ onConnectClick }: { onConnectClick: () => void }) {
   const { address, isConnected, chain } = useAccount();
@@ -13,7 +16,11 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
     address,
     query: { enabled: !!address },
   });
-  const { disconnect } = useDisconnect();
+  const { user } = usePrivy();
+  const { logout } = useLogout();
+  const { exportWallet } = useExportWallet();
+  const embedded = isEmbeddedWalletUser(user);
+  const email = signInEmail(user);
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -77,7 +84,13 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
       </button>
       <div className={`wallet-menu${open ? " open" : ""}`} id="walletMenu" role="menu">
         <div className="wallet-menu-head">
-          <div className="wm-label">Connected wallet</div>
+          <div className="wm-label">
+            {embedded
+              ? email
+                ? `Signed in as ${email}`
+                : "Your Balcore wallet"
+              : "Connected wallet"}
+          </div>
           <div className="wm-addr mono">{short}</div>
           <div className="wm-net">
             <span className="live-dot"></span>
@@ -235,6 +248,33 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
             />
           </svg>
         </Link>
+        {embedded && (
+          <button
+            className="wallet-menu-item"
+            id="exportKeyBtn"
+            role="menuitem"
+            title="Copy your wallet's private key to use it in another wallet app"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+              void exportWallet(address ? { address } : undefined).catch(() => {
+                /* user closed the export modal */
+              });
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
+              <circle cx="5.5" cy="11.5" r="3" stroke="currentColor" strokeWidth="1.4" />
+              <path
+                d="M7.7 9.3 14 3M11.5 5.5 13.5 7.5M12.8 4.2l1.5 1.5"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Export wallet key
+          </button>
+        )}
         <button
           className="wallet-menu-item danger"
           id="disconnectBtn"
@@ -242,7 +282,9 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
           onClick={(e) => {
             e.stopPropagation();
             setOpen(false);
-            disconnect();
+            // Privy owns the session: logging out clears it and drops the
+            // wallet from wagmi (wagmi's own disconnect is not supported).
+            void logout();
           }}
         >
           <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
@@ -254,7 +296,7 @@ export default function WalletMenu({ onConnectClick }: { onConnectClick: () => v
               strokeLinejoin="round"
             />
           </svg>
-          Disconnect
+          Sign out
         </button>
       </div>
     </div>

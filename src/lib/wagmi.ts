@@ -1,6 +1,5 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { createConfig, http } from "wagmi";
-import { injected, coinbaseWallet } from "wagmi/connectors";
+import { createConfig } from "@privy-io/wagmi";
+import { http } from "wagmi";
 import {
   arbitrum,
   arbitrumSepolia,
@@ -13,8 +12,6 @@ import {
   polygonAmoy,
   sepolia,
 } from "wagmi/chains";
-
-const projectId = (import.meta.env["VITE_WALLETCONNECT_PROJECT_ID"] as string | undefined) ?? "";
 
 /**
  * Network selection. "mainnet" is the default; this app is intended for
@@ -64,35 +61,27 @@ export const snowtraceApiBase = isMainnet
   : "https://api-testnet.snowtrace.io/api";
 
 /**
- * WalletConnect requires a Cloud projectId. When VITE_WALLETCONNECT_PROJECT_ID
- * is missing we fall back to a browser-extension-only config so the app still
- * runs locally instead of crashing at import time.
+ * Wallet connections are owned by Privy (email/Google sign-in with an embedded
+ * wallet, or an external wallet such as Core or MetaMask). Privy's createConfig
+ * strips wagmi's own connectors and feeds the signed-in user's wallet into
+ * wagmi, so every existing wagmi hook (useAccount, useBalance, useWriteContract,
+ * useSwitchChain…) keeps working unchanged. See src/lib/privy.ts.
  */
-export const wagmiConfig = projectId
-  ? getDefaultConfig({
-      appName: "Balcore",
-      projectId,
-      chains: chains as never,
-      ssr: false,
-    })
-  : createConfig({
-      chains: chains as never,
-      connectors: [injected(), coinbaseWallet({ appName: "Balcore" })],
-      // Keyed by every chain either environment can register, so this map can
-      // never drift behind the two lists above.
-      transports: {
-        [avalanche.id]: http(),
-        [avalancheFuji.id]: http(),
-        [mainnet.id]: http(),
-        [sepolia.id]: http(),
-        [base.id]: http(),
-        [baseSepolia.id]: http(),
-        [arbitrum.id]: http(),
-        [arbitrumSepolia.id]: http(),
-        [polygon.id]: http(),
-        [polygonAmoy.id]: http(),
-      },
-      ssr: false,
-    });
-
-export const hasWalletConnect = Boolean(projectId);
+export const wagmiConfig = createConfig({
+  chains: chains as never,
+  // Keyed by every chain either environment can register, so this map can
+  // never drift behind the two lists above.
+  transports: {
+    [avalanche.id]: http(),
+    [avalancheFuji.id]: http(),
+    [mainnet.id]: http(),
+    [sepolia.id]: http(),
+    [base.id]: http(),
+    [baseSepolia.id]: http(),
+    [arbitrum.id]: http(),
+    [arbitrumSepolia.id]: http(),
+    [polygon.id]: http(),
+    [polygonAmoy.id]: http(),
+  },
+  ssr: false,
+});

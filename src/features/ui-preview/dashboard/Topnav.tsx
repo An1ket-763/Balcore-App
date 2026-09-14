@@ -107,18 +107,6 @@ export default function Topnav({
               />
             </svg>
           </button>
-          <div className="width-toggle" id="widthToggle" role="group" aria-label="Layout width">
-            <button data-w="fit" className="on" title="Centered" aria-label="Centered width">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <rect x="4" y="3" width="8" height="10" rx="1.4" stroke="currentColor" strokeWidth="1.4" />
-              </svg>
-            </button>
-            <button data-w="wide" title="Wide" aria-label="Wide width">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <rect x="1.5" y="3" width="13" height="10" rx="1.4" stroke="currentColor" strokeWidth="1.4" />
-              </svg>
-            </button>
-          </div>
           <span className="tb-sep" aria-hidden="true"></span>
           <button
             className="swap-btn"
