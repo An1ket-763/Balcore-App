@@ -101,3 +101,22 @@ export const FEED_DECIMALS = 8;
 export function priceToFloat(price8: bigint | null): number {
   return toFloat(price8, FEED_DECIMALS);
 }
+
+/**
+ * The `answer` out of a `latestRoundData()` tuple at `index`, or 0n.
+ *
+ * `latestRoundData` returns (roundId, answer, startedAt, updatedAt,
+ * answeredInRound); `answer` is field 1 and is an int256, so viem hands back a
+ * possibly-negative bigint.
+ *
+ * A non-positive answer is reported as 0n — "no price" rather than "free" —
+ * because that is exactly how the contracts treat it: `_readValidatedPrice`
+ * reverts `StalePriceData` on `answer <= 0` (VaultViewLib.sol:153). Callers
+ * must branch on `=== 0n` and render a placeholder, never a zero.
+ */
+export function feedAnswerAt(results: ReadResults, index: number): bigint {
+  const entry = results?.[index];
+  if (!entry || entry.status !== "success" || !Array.isArray(entry.result)) return 0n;
+  const answer = (entry.result as readonly unknown[])[1];
+  return typeof answer === "bigint" && answer > 0n ? answer : 0n;
+}

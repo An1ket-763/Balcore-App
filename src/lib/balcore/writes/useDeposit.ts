@@ -43,6 +43,7 @@ import { PHARAOH_SWAP_ROUTER, buildPharaohSwap, pharaohRouterAbi } from "@/lib/p
 import { USDC, tokenBySymbol, type SwapToken } from "@/lib/tokens";
 import { useRouteQuotes, type RouteQuote } from "@/features/ui-preview/dashboard/data/swapQuote";
 import { balcoreBankAbi } from "../abi/bank";
+import { chainlinkFeedAbi } from "../abi/feed";
 import { balcoreVaultAbi } from "../abi/vault";
 import { poolByKey, type BalcorePool, type PoolKey } from "../config/addresses";
 import { matchedAmount } from "../math";
@@ -161,29 +162,6 @@ const erc20BalanceAbi = [
     stateMutability: "view",
     inputs: [{ name: "account", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
-  },
-] as const;
-
-/**
- * Chainlink's aggregator read.
- *
- * Hand-written, like `lfjSwap.ts`'s `erc20ApprovalAbi` and `contracts.ts`'s own
- * Chainlink fragment: this is the AggregatorV3Interface standard, not a Balcore
- * contract, so `extract-abi.sh` has no artifact for it.
- */
-const chainlinkFeedAbi = [
-  {
-    type: "function",
-    name: "latestRoundData",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [
-      { name: "roundId", type: "uint80" },
-      { name: "answer", type: "int256" },
-      { name: "startedAt", type: "uint256" },
-      { name: "updatedAt", type: "uint256" },
-      { name: "answeredInRound", type: "uint80" },
-    ],
   },
 ] as const;
 

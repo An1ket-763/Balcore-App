@@ -14,6 +14,7 @@ import { useMemo } from "react";
 import { useReadContracts } from "wagmi";
 import { defaultChain } from "@/lib/wagmi";
 import { balcoreBankAbi } from "../abi/bank";
+import { chainlinkFeedAbi } from "../abi/feed";
 import { balcoreVaultAbi } from "../abi/vault";
 import { balcoreSequencerAbi } from "../abi/sequencer";
 import { lbPairAbi } from "../abi/pair";
@@ -25,7 +26,7 @@ import {
   type PoolKey,
 } from "../config/addresses";
 import { binToPrice, feeDialLane, holderTVL, matchedAmount, nextTuesday00Z } from "../math";
-import { bigintAt, boolAt, numberAt, priceToFloat, toFloat } from "./shared";
+import { bigintAt, boolAt, feedAnswerAt, numberAt, priceToFloat, toFloat } from "./shared";
 
 /* ------------------------------------------------------------------ */
 /* Shape                                                               */
@@ -75,9 +76,39 @@ export interface VaultStats {
   /** Whether the live bin sits inside the deployed range. */
   inRange: boolean;
 
-  /** `vault.lastValidPrice()` — tokenA/USD, 8 decimals. */
+  /**
+   * `vault.lastValidPrice()` — tokenA/USD, 8 decimals.
+   *
+   * THE ANCHOR, NOT THE PRICE, and never safe to put on screen. It is whatever
+   * the last state-changing call wrote, and the dry-run harness measured it
+   * 1.330% away from the live feed on 2026-09-13 ($78,167.36 anchor vs
+   * $77,138.59 feed). Kept because the bank's own views value against it, so
+   * it is what reconciles with on-chain accounting — use `feedPrice8` for
+   * anything a user sees.
+   */
   price: bigint;
   priceUsd: number;
+
+  /**
+   * The LIVE Chainlink answer for tokenA/USD, 8 decimals — `latestRoundData()`
+   * at `pool.feed`, the same read `fetchAndCheckPrice()` performs.
+   *
+   * 0n when the feed call failed or reported a non-positive answer. Callers
+   * must render a placeholder on 0n rather than a zero price.
+   */
+  feedPrice8: bigint;
+  feedPriceUsd: number;
+
+  /**
+   * Holder-TVL recomputed at the LIVE feed price instead of the anchor.
+   *
+   * Differs from `holderTVL` only by the tokenA leg of the earmarked pending
+   * baskets, which the two prices value differently. This is the figure to
+   * display; `holderTVL` is the figure that matches the bank's books.
+   * Falls back to the anchored value when the feed is unreadable.
+   */
+  holderTVLAtFeed: bigint;
+  holderTVLAtFeedUsd: number;
 
   reserves: TokenPair<bigint>;
   reservesDisplay: TokenPair<number>;
@@ -86,8 +117,10 @@ export interface VaultStats {
 
   /** Harvested fees not yet distributed, tokenB atoms. */
   pendingHarvest: bigint;
+  pendingHarvestUsd: number;
   /** The reserve/IL-shield vault balance, tokenB atoms. */
   reserveVault: bigint;
+  reserveVaultUsd: number;
 
   /** Bank is in run mode — fast-track is suspended while true. */
   runMode: boolean;
@@ -148,6 +181,7 @@ const I = {
   feeDials: 19,
   minPositionValueB: 20,
   activeId: 21,
+  feedRound: 22,
 } as const;
 
 const CALL_COUNT = Object.keys(I).length;
@@ -190,6 +224,13 @@ function buildCalls(pool: BalcorePool) {
       chainId: defaultChain.id,
       functionName: "getActiveId",
     },
+    // THE PRICE ANYTHING USER-FACING IS ALLOWED TO USE. See `feedPrice8`.
+    {
+      abi: chainlinkFeedAbi,
+      address: pool.feed,
+      chainId: defaultChain.id,
+      functionName: "latestRoundData",
+    },
   ];
 }
 
@@ -228,6 +269,14 @@ export function useVaultStats(key: PoolKey): UseVaultStatsResult {
 
     const holder = holderTVL(totalAssets, pendingA, pendingB, price, pool.scaleA2B);
 
+    // The live feed, and holder-TVL re-struck against it. Only the pending
+    // tokenA earmark is priced, so the two agree whenever nothing is queued.
+    const feedPrice8 = feedAnswerAt(r, I.feedRound);
+    const holderAtFeed =
+      feedPrice8 > 0n
+        ? holderTVL(totalAssets, pendingA, pendingB, feedPrice8, pool.scaleA2B)
+        : holder;
+
     const capActive = boolAt(r, I.tvlCapActive) ?? false;
     const rawCap = bigintAt(r, I.launchTvlCap);
     const tvlCap = capActive ? rawCap : null;
@@ -258,6 +307,8 @@ export function useVaultStats(key: PoolKey): UseVaultStatsResult {
       reserves.tokenB >= minPositionValueB;
 
     const feeDials = bigintAt(r, I.feeDials) ?? 0n;
+    const pendingHarvestAtoms = bigintAt(r, I.pendingHarvest) ?? 0n;
+    const reserveVaultAtoms = bigintAt(r, I.reserveVault) ?? 0n;
 
     return {
       pool,
@@ -287,6 +338,10 @@ export function useVaultStats(key: PoolKey): UseVaultStatsResult {
       inRange: deployed && activeBin !== null && activeBin >= lowerBin && activeBin <= upperBin,
       price,
       priceUsd: priceToFloat(price),
+      feedPrice8,
+      feedPriceUsd: priceToFloat(feedPrice8),
+      holderTVLAtFeed: holderAtFeed,
+      holderTVLAtFeedUsd: toFloat(holderAtFeed, pool.tokenB.decimals),
       reserves,
       reservesDisplay: {
         tokenA: toFloat(reserves.tokenA, pool.tokenA.decimals),
@@ -297,8 +352,10 @@ export function useVaultStats(key: PoolKey): UseVaultStatsResult {
         tokenA: toFloat(debts.tokenA, pool.tokenA.decimals),
         tokenB: toFloat(debts.tokenB, pool.tokenB.decimals),
       },
-      pendingHarvest: bigintAt(r, I.pendingHarvest) ?? 0n,
-      reserveVault: bigintAt(r, I.reserveVault) ?? 0n,
+      pendingHarvest: pendingHarvestAtoms,
+      pendingHarvestUsd: toFloat(pendingHarvestAtoms, pool.tokenB.decimals),
+      reserveVault: reserveVaultAtoms,
+      reserveVaultUsd: toFloat(reserveVaultAtoms, pool.tokenB.decimals),
       runMode: boolAt(r, I.runMode) ?? false,
       paused: boolAt(r, I.paused) ?? false,
       apyCapBps: feeDialLane(feeDials, "apyCap"),

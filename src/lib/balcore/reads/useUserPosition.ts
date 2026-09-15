@@ -14,6 +14,7 @@ import { useReadContracts } from "wagmi";
 import type { Address } from "viem";
 import { defaultChain } from "@/lib/wagmi";
 import { balcoreBankAbi } from "../abi/bank";
+import { chainlinkFeedAbi } from "../abi/feed";
 import { balcoreVaultAbi } from "../abi/vault";
 import {
   BALCORE_CHAIN_ID,
@@ -23,7 +24,16 @@ import {
   type PoolKey,
 } from "../config/addresses";
 import { holderTVL, positionValue } from "../math";
-import { bigintAt, boolAt, toFloat, tupleAt, tupleBigint, tupleBool } from "./shared";
+import {
+  bigintAt,
+  boolAt,
+  feedAnswerAt,
+  priceToFloat,
+  toFloat,
+  tupleAt,
+  tupleBigint,
+  tupleBool,
+} from "./shared";
 
 /** `PRECISION` on the bank — yieldPerShare is scaled by 1e18. */
 const PRECISION = 10n ** 18n;
@@ -71,9 +81,31 @@ export interface UserPosition {
   shares: bigint;
   /** Share of the pool, 0..100. 0 when the vault has no shares. */
   sharePct: number;
-  /** Shares valued against holder-TVL, tokenB atoms. */
+  /**
+   * Shares valued against holder-TVL at `vault.lastValidPrice()`, tokenB atoms.
+   *
+   * Reconciles with the bank's own views, which price against the anchor — but
+   * the anchor is not a number to show anyone (measured 1.330% off the feed).
+   * Display `positionValueAtFeed`.
+   */
   positionValue: bigint;
   positionValueUsd: number;
+
+  /**
+   * The same position valued at the LIVE Chainlink answer.
+   *
+   * This is the display figure. Equal to `positionValue` when the vault has no
+   * pending baskets earmarked, and falls back to it if the feed is unreadable.
+   */
+  positionValueAtFeed: bigint;
+  positionValueAtFeedUsd: number;
+
+  /**
+   * The live tokenA/USD answer, 8 decimals; 0n when the feed is unreadable.
+   * Never `vault.lastValidPrice()` — see `positionValue`.
+   */
+  feedPrice8: bigint;
+  feedPriceUsd: number;
 
   /** Deposit has rolled into an active epoch and is earning LP fees. */
   activated: boolean;
@@ -129,6 +161,7 @@ const I = {
   pendingUsdc: 10,
   currentEpoch: 11,
   lastValidPrice: 12,
+  feedRound: 13,
 } as const;
 
 const CALL_COUNT = Object.keys(I).length;
@@ -174,6 +207,13 @@ function buildCalls(pool: BalcorePool, user: Address) {
     { ...bank, functionName: "pendingUsdc" },
     { ...bank, functionName: "currentEpoch" },
     { ...vault, functionName: "lastValidPrice" },
+    // The live feed — the only price allowed to reach the screen.
+    {
+      abi: chainlinkFeedAbi,
+      address: pool.feed,
+      chainId: defaultChain.id,
+      functionName: "latestRoundData",
+    },
   ];
 }
 
@@ -244,6 +284,17 @@ export function useUserPosition(key: PoolKey, address: Address | undefined): Use
     const holder = holderTVL(totalAssets, pendingA, pendingB, price, pool.scaleA2B);
     const value = positionValue(shares, holder, totalShares);
 
+    // The same shares re-struck at the live feed — the figure that is shown.
+    const feedPrice8 = feedAnswerAt(results, I.feedRound);
+    const valueAtFeed =
+      feedPrice8 > 0n
+        ? positionValue(
+            shares,
+            holderTVL(totalAssets, pendingA, pendingB, feedPrice8, pool.scaleA2B),
+            totalShares,
+          )
+        : value;
+
     const claimTuple = tupleAt(results, I.claimable);
     const claimA = tupleBigint(claimTuple, 0);
     const claimB = tupleBigint(claimTuple, 1);
@@ -288,6 +339,10 @@ export function useUserPosition(key: PoolKey, address: Address | undefined): Use
       sharePct: totalShares > 0n ? Number((shares * 1_000_000n) / totalShares) / 10_000 : 0,
       positionValue: value,
       positionValueUsd: toFloat(value, decB),
+      positionValueAtFeed: valueAtFeed,
+      positionValueAtFeedUsd: toFloat(valueAtFeed, decB),
+      feedPrice8,
+      feedPriceUsd: priceToFloat(feedPrice8),
       activated: boolAt(results, I.isActivated) ?? tupleBool(posTuple, POS.activated),
       entryEpoch,
       lastClaimedEpoch,
