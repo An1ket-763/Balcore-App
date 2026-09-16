@@ -18,7 +18,7 @@ import {
 import { LOGO } from "../logo";
 import { LFJ_ICON } from "../lfjIcon";
 import { balanceOf, rawBalanceOf, useSwapBalances } from "../data/swapBalances";
-import { getTokenPrices } from "../data/prices";
+import { useTokenPrices } from "../data/prices";
 import { useRouteQuotes, type RouteId, type RouteQuote } from "../data/swapQuote";
 import { gasReserveWei, portionOf, spendableNative } from "@/lib/gasReserve";
 import { PreflightError, isRevert } from "@/lib/txPreflight";
@@ -88,7 +88,7 @@ interface RoutePlan {
 export default function SwapPanel() {
   const { address, isConnected, chain } = useAccount();
   const { balances, raw: rawBalances, isLoading: balancesLoading } = useSwapBalances();
-  const prices = getTokenPrices();
+  const { prices } = useTokenPrices();
   const publicClient = usePublicClient({ chainId: defaultChain.id });
 
   const [tokenIn, setTokenIn] = useState<SwapToken>(USDC);

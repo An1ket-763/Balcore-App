@@ -90,7 +90,9 @@ export const SWAP_TOKENS: readonly SwapToken[] = [
     native: false,
     coinClass: "c-eth",
     badge: "Ξ",
-    priceKey: "ETH",
+    // No priceKey: there is no ETH/USD feed configured for this deployment, so
+    // the swap panel shows WETH.e without a USD estimate rather than with an
+    // invented one. `priceKey` is optional precisely for this case.
   },
   {
     symbol: "BTC.b",

@@ -30,6 +30,7 @@ import { useAccount } from "wagmi";
 import {
   BALCORE_POOLS,
   useFastTrack,
+  useVaultStats,
   useWithdraw,
   type BalcorePool,
   type InspectOptions,
@@ -79,6 +80,14 @@ export default function WithdrawPanel({ inspectAs }: InspectOptions = {}) {
   const opts = inspectAs ? { inspectAs } : undefined;
   const withdraw = useWithdraw(poolKey, opts);
   const fast = useFastTrack(poolKey, opts);
+
+  /**
+   * The APY CAP for the selected pool — see the same note in DepositPanel. This
+   * slot used to print a hardcoded "30.0%" as though it were the pool's realised
+   * yield; `apyCapBps` is the real dial from `feeDialsPacked`.
+   */
+  const stats = useVaultStats(poolKey);
+  const apyCapText = stats.data ? `${(stats.data.apyCapBps / 100).toFixed(2)}%` : null;
 
   /**
    * Fast-Track is unavailable on mainnet today (the BTC pool is in run mode), so
@@ -189,9 +198,9 @@ export default function WithdrawPanel({ inspectAs }: InspectOptions = {}) {
         </div>
         <div className="apy">
           <div className="v" id="wdPoolApy">
-            30.0%
+            {stats.isLoading ? <span className="is-loading">…</span> : (apyCapText ?? "—")}
           </div>
-          <div className="k">/ YR · CAPPED</div>
+          <div className="k">APY CAP</div>
         </div>
         <svg className="pool-caret" width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path
@@ -227,7 +236,8 @@ export default function WithdrawPanel({ inspectAs }: InspectOptions = {}) {
               </span>
               <span className="pmi-body">
                 <span className="pmi-name">{p.label}</span>
-                <span className="pmi-sub">{live ? "30.0% APY · capped 30%" : "Coming soon"}</span>
+                {/* No APY per row — the cap is read for the selected pool only. */}
+                <span className="pmi-sub">{live ? "Open for withdrawals" : "Coming soon"}</span>
               </span>
             </button>
           );

@@ -25,7 +25,14 @@ import {
   type BalcorePool,
   type PoolKey,
 } from "../config/addresses";
-import { binToPrice, feeDialLane, holderTVL, matchedAmount, nextTuesday00Z } from "../math";
+import {
+  binToPrice,
+  feeDialLane,
+  holderTVL,
+  matchedAmount,
+  nextTuesday00Z,
+  type FeeDialKey,
+} from "../math";
 import { bigintAt, boolAt, feedAnswerAt, numberAt, priceToFloat, toFloat } from "./shared";
 
 /* ------------------------------------------------------------------ */
@@ -128,6 +135,17 @@ export interface VaultStats {
 
   /** APY cap in bps from the packed fee dials. 3000 = the advertised 30%. */
   apyCapBps: number;
+
+  /**
+   * EVERY dial out of `feeDialsPacked()`, in bps — the protocol's live fee
+   * configuration rather than the numbers a designer typed into the Protocol
+   * screen. `apyCapBps` above is the same value as `feeDialsBps.apyCap`, kept
+   * because callers already use it.
+   *
+   * Launch values (math.ts:79-92): base 500, debtRepay 2500, perf 3000,
+   * apyCap 3000, reserveHealth 500, ilSkim 0.
+   */
+  feeDialsBps: Record<FeeDialKey, number>;
 
   /**
    * Both legs are above the sequencer's `minPositionValueB` floor, i.e. the
@@ -359,6 +377,16 @@ export function useVaultStats(key: PoolKey): UseVaultStatsResult {
       runMode: boolAt(r, I.runMode) ?? false,
       paused: boolAt(r, I.paused) ?? false,
       apyCapBps: feeDialLane(feeDials, "apyCap"),
+      // Listed one by one rather than mapped, so a new lane in FEE_DIAL_KEYS is
+      // a type error here instead of a silently missing field.
+      feeDialsBps: {
+        base: feeDialLane(feeDials, "base"),
+        debtRepay: feeDialLane(feeDials, "debtRepay"),
+        perf: feeDialLane(feeDials, "perf"),
+        apyCap: feeDialLane(feeDials, "apyCap"),
+        reserveHealth: feeDialLane(feeDials, "reserveHealth"),
+        ilSkim: feeDialLane(feeDials, "ilSkim"),
+      },
       vaultOpen,
       minPositionValueB,
     };

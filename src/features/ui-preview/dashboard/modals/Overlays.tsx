@@ -1,17 +1,55 @@
+import { useMemo, type ReactNode } from "react";
+import { useAccount } from "wagmi";
 import { LOGO } from "../logo";
 import { useTokenBalances } from "../data/balances";
-import { getTokenPrices, type TokenSymbol } from "../data/prices";
+import { useTokenPrices, type TokenSymbol } from "../data/prices";
+import { LIVE_POOLS, useUserPosition, useVaultStats } from "@/lib/balcore";
 import SwapPanel from "./SwapPanel";
 import BridgePanel from "./BridgePanel";
 import DepositPanel from "./DepositPanel";
 import WithdrawPanel from "./WithdrawPanel";
 
+/* ------------------------------------------------------------------ */
+/* Figures                                                             */
+/* ------------------------------------------------------------------ */
+
+/** Same convention as OverviewView / ProtocolView: an em dash, never a zero. */
+const NONE = "—";
+
+interface Loadable {
+  isLoading: boolean;
+  isError: boolean;
+}
+
+function figure(src: Loadable, value: string | null): ReactNode {
+  if (src.isLoading) return <span className="is-loading">…</span>;
+  if (src.isError || value === null) return NONE;
+  return value;
+}
+
+const fmtUsd2 = (n: number) =>
+  "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const fmtUsdShort = (n: number) =>
+  n >= 1e6
+    ? `$${(n / 1e6).toFixed(2)}M`
+    : n >= 1e3
+      ? `$${(n / 1e3).toFixed(1)}K`
+      : "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+
+const fmtPct = (n: number) => `${n.toFixed(2)}%`;
+
+/**
+ * The assets this deployment can read a balance for AND price.
+ *
+ * Gold (XAUt) and Tesla rows are gone with `MOCK_BALANCES` — they were fixed
+ * quantities of tokens that, per balances.ts's own comment, "aren't real tokens
+ * on Avalanche". BTC is now a genuine BTC.b read.
+ */
 const WALLET_ROWS: { sym: TokenSymbol; coinClass: string; glyph: string; unit: string; pool: string }[] = [
-  { sym: "BTC", coinClass: "c-btc", glyph: "₿", unit: "BTC", pool: "btc" },
-  { sym: "GOLD", coinClass: "c-gold", glyph: "Au", unit: "XAUt", pool: "gold" },
+  { sym: "BTC", coinClass: "c-btc", glyph: "₿", unit: "BTC.b", pool: "btc" },
   { sym: "USDC", coinClass: "c-usd", glyph: "$", unit: "USDC", pool: "usdc" },
   { sym: "AVAX", coinClass: "c-avax", glyph: "A", unit: "AVAX", pool: "usdc" },
-  { sym: "TSLA", coinClass: "c-tsla", glyph: "T", unit: "TSLA", pool: "tsla" },
 ];
 
 function fmtUsd(n: number) {
@@ -23,7 +61,48 @@ function fmtAmt(n: number) {
 
 export default function Overlays() {
   const { balances, isLoading: balancesLoading } = useTokenBalances();
-  const prices = getTokenPrices();
+  const { prices, isLoading: pricesLoading } = useTokenPrices();
+
+  /**
+   * Wallet total over the assets that have a live price. `null` when none do;
+   * `walletTotalComplete` is false when at least one held asset had to be
+   * skipped, which the UI marks with an asterisk rather than quietly
+   * under-reporting.
+   */
+  const { walletTotal, walletTotalComplete } = useMemo(() => {
+    let sum = 0;
+    let priced = 0;
+    let skipped = 0;
+    for (const sym of Object.keys(balances) as TokenSymbol[]) {
+      const usd = prices[sym]?.usd;
+      if (typeof usd === "number") {
+        sum += balances[sym] * usd;
+        priced++;
+      } else if (balances[sym] > 0) {
+        skipped++;
+      }
+    }
+    return { walletTotal: priced > 0 ? sum : null, walletTotalComplete: skipped === 0 };
+  }, [balances, prices]);
+
+  // "btc" only — AVAX's keeper is stopped and its pool is never queried.
+  const { address } = useAccount();
+  const stats = useVaultStats("btc");
+  const position = useUserPosition("btc", address);
+  const s = stats.data;
+  const p = position.data;
+
+  const positionValueText = p ? fmtUsd2(p.positionValueAtFeedUsd) : null;
+  const sharePctText = p ? fmtPct(p.sharePct) : null;
+  const tvlText = s ? fmtUsdShort(s.holderTVLAtFeedUsd) : null;
+  const depositValueText = p ? fmtUsd2(p.depositValueUsd) : null;
+  const lastWeekText =
+    p === null || p.lastWeekYieldUsd === null
+      ? null
+      : (p.lastWeekYieldUsd > 0 ? "+" : "") + fmtUsd2(p.lastWeekYieldUsd);
+  const poolCount = LIVE_POOLS.length;
+  const poolLabel = LIVE_POOLS[0]?.label ?? "Bitcoin / Dollar";
+
   return (
     <>
 <div className="overlay" id="ovShare" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
@@ -32,34 +111,36 @@ export default function Overlays() {
       <h2 id="shareTitle">Your share by pool</h2>
       <button className="m-close" data-close={true} aria-label="Close">✕</button>
     </div>
-    <p className="m-sub">How much of each pool's liquidity you provide — across 3 active pools.</p>
+    <p className="m-sub">
+      How much of the pool's liquidity you provide — across {poolCount}{" "}
+      {poolCount === 1 ? "active pool" : "active pools"}.
+    </p>
     <div className="split" style={{margin: "6px 0 16px"}}>
-      <div><div className="k">Your liquidity</div><div className="v mono">$2,418,930</div></div>
-      <div style={{textAlign: "right"}}><div className="k">Share of all TVL</div><div className="v mono mint">9.84%</div></div>
+      <div><div className="k">Your liquidity</div><div className="v mono">{figure(position, positionValueText)}</div></div>
+      <div style={{textAlign: "right"}}><div className="k">Share of pool TVL</div><div className="v mono mint">{figure(position, sharePctText)}</div></div>
     </div>
+    {/*
+      One row, for the one live pool. This list used to carry Tesla / Dollar and
+      Gold / Dollar with invented percentages — neither exists in
+      config/addresses.ts. `paintPortfolio()` in dashboardScripts.ts reads the
+      `data-coins` attribute off these rows to label the portfolio breakdown, so
+      the attribute stays.
+    */}
     <div className="share-list">
       <div className="share-row" data-coins="btc">
         <span className="pair-ic"><span className="coin c-btc">₿</span><span className="coin c-usd">$</span></span>
         <div className="share-row-body">
-          <div className="share-row-top"><span className="share-pool">Bitcoin / Dollar</span><span className="share-pct mono">12.6%</span></div>
-          <div className="share-track"><div className="share-fill" style={{width: "12.6%"}}></div></div>
-          <div className="share-row-sub"><span>$1,325,000 provided</span><span>pool TVL $10.5M</span></div>
-        </div>
-      </div>
-      <div className="share-row" data-coins="tsla">
-        <span className="pair-ic"><span className="coin c-tsla">T</span><span className="coin c-usd">$</span></span>
-        <div className="share-row-body">
-          <div className="share-row-top"><span className="share-pool">Tesla / Dollar</span><span className="share-pct mono">8.1%</span></div>
-          <div className="share-track"><div className="share-fill" style={{width: "8.1%", background: "#e0554b"}}></div></div>
-          <div className="share-row-sub"><span>$657,200 provided</span><span>pool TVL $8.1M</span></div>
-        </div>
-      </div>
-      <div className="share-row" data-coins="gold">
-        <span className="pair-ic"><span className="coin c-gold">Au</span><span className="coin c-usd">$</span></span>
-        <div className="share-row-body">
-          <div className="share-row-top"><span className="share-pool">Gold / Dollar</span><span className="share-pct mono">7.4%</span></div>
-          <div className="share-track"><div className="share-fill" style={{width: "7.4%", background: "#d9b24a"}}></div></div>
-          <div className="share-row-sub"><span>$436,730 provided</span><span>pool TVL $5.9M</span></div>
+          <div className="share-row-top">
+            <span className="share-pool">{poolLabel}</span>
+            <span className="share-pct mono">{figure(position, sharePctText)}</span>
+          </div>
+          <div className="share-track">
+            <div className="share-fill" style={{width: p ? `${Math.min(p.sharePct, 100)}%` : "0%"}}></div>
+          </div>
+          <div className="share-row-sub">
+            <span>{figure(position, positionValueText === null ? null : `${positionValueText} provided`)}</span>
+            <span>{figure(stats, tvlText === null ? null : `pool TVL ${tvlText}`)}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -81,42 +162,16 @@ export default function Overlays() {
 </div>
 
 
-<div className="overlay" id="ovBalBreak" role="dialog" aria-modal="true" aria-labelledby="balBreakTitle">
-  <div className="modal bb-modal" style={{maxWidth: "420px"}}>
-    <div className="m-head">
-      <h2 id="balBreakTitle">How your balance grew</h2>
-      <button className="m-close" data-close={true} aria-label="Close">✕</button>
-    </div>
-    <p className="m-sub">Where your $2,418,930 came from — and what it's earned over simply holding.</p>
+{/*
+  #ovBalBreak ("How your balance grew") was DELETED, not disabled.
 
-    
-    <div className="bb-compare">
-      <div className="bb-cmp-leg">
-        <div className="bb-cmp-cap">If you'd just held your deposited assets at today's price</div>
-        <div className="bb-cmp-amt mono">$2,289,400</div>
-      </div>
-      <div className="bb-vs">vs</div>
-      <div className="bb-cmp-leg is-bal">
-        <div className="bb-cmp-cap">With Balcore, it's worth your $2,418,930 position + $426,190 in fees taken</div>
-        <div className="bb-cmp-amt mono">$2,845,120</div>
-      </div>
-    </div>
-    <div className="bb-delta"><span className="mono">+$555,720</span><span className="bb-delta-t">ahead of just holding</span></div>
-
-    <div className="bb-sec">In your balance</div>
-    <div className="bb-list">
-      <div className="bb-row"><span className="bb-k">Deposited from your wallet</span><span className="bb-v mono">$2,332,720</span></div>
-      <div className="bb-row"><span className="bb-k">Fees reinvested · auto-compound <span className="bb-tag">compounding</span></span><span className="bb-v mono mint">+$86,210</span></div>
-      <div className="bb-row"><span className="bb-k">Net Impermanent Loss after coverage</span><span className="bb-v mono" style={{color: "var(--text-3)"}}>$0</span></div>
-      <div className="bb-total"><span className="bb-k">Your balance</span><span className="bb-v mono">$2,418,930</span></div>
-    </div>
-    <div className="bb-sec">Earned & already withdrawn</div>
-    <div className="bb-list">
-      <div className="bb-row"><span className="bb-k">Fees claimed to your wallet</span><span className="bb-v mono">$426,190</span></div>
-    </div>
-    <p className="m-foot">Lifetime fees earned: <b style={{color: "var(--mint)"}}>$512,400</b> — $86,210 compounding here, $426,190 already in your wallet. That puts you <b style={{color: "var(--mint)"}}>$555,720</b> ahead of simply holding — every figure verifiable on-chain.</p>
-  </div>
-</div>
+  Nothing opened it: #balBreakLink and #edgeCard were both disconnected once
+  the figures behind them turned out to be unobtainable. Its thirteen numbers
+  were invented, and one row actively contradicted v1 — it credited "Fees
+  reinvested · auto-compound" with a "compounding" tag, when v1 has no
+  auto-compound at all and yield sits unclaimed until the holder calls
+  claimYield(). Rebuild it from an indexed history when one exists.
+*/}
 
 <div className="overlay" id="ovDepBreak" role="dialog" aria-modal="true" aria-labelledby="depBreakTitle">
   <div className="modal gold-modal">
@@ -124,17 +179,31 @@ export default function Overlays() {
       <h2 id="depBreakTitle">What you deposited</h2>
       <button className="m-close" data-close={true} aria-label="Close">✕</button>
     </div>
-    <p className="m-sub">The exact token quantities you provided — protected by count, not price.</p>
+    <p className="m-sub">The value your position is protected at.</p>
     <div className="split" style={{margin: "6px 0 16px"}}>
-      <div><div className="k">Total deposited</div><div className="v mono">$2,332,720</div></div>
-      <div style={{textAlign: "right"}}><div className="k">Across</div><div className="v mono">3 pools</div></div>
+      <div><div className="k">Total deposited</div><div className="v mono">{figure(position, depositValueText)}</div></div>
+      <div style={{textAlign: "right"}}><div className="k">Across</div><div className="v mono">{poolCount} {poolCount === 1 ? "pool" : "pools"}</div></div>
     </div>
+    {/*
+      `depositValue` is the strike the bank protects the position at, in tokenB
+      atoms — a real read. The ORIGINAL TOKEN SPLIT is not: the bank zeroes the
+      queued amounts once a deposit activates, so "7.88 BTC · 662,000 USDC" was
+      not recoverable from chain state even for the one live pool. The rows for
+      Tesla and Gold were pools that do not exist.
+    */}
     <div className="wl-list">
-      <div className="wl-row"><span className="pair-ic db-ic"><span className="coin c-btc">₿</span><span className="coin c-usd">$</span></span><div className="wl-body"><div className="wl-top"><span className="wl-name">Bitcoin / Dollar</span><span className="wl-val mono">$1,278,300</span></div><div className="wl-sub"><span className="mono">7.88 BTC · 662,000 USDC</span><span>provided</span></div></div></div>
-      <div className="wl-row"><span className="pair-ic db-ic"><span className="coin c-tsla">T</span><span className="coin c-usd">$</span></span><div className="wl-body"><div className="wl-top"><span className="wl-name">Tesla / Dollar</span><span className="wl-val mono">$634,300</span></div><div className="wl-sub"><span className="mono">1,595 TSLA · 328,600 USDC</span><span>provided</span></div></div></div>
-      <div className="wl-row"><span className="pair-ic db-ic"><span className="coin c-gold">Au</span><span className="coin c-usd">$</span></span><div className="wl-body"><div className="wl-top"><span className="wl-name">Gold / Dollar</span><span className="wl-val mono">$420,120</span></div><div className="wl-sub"><span className="mono">82.0 XAUt · 217,300 USDC</span><span>provided</span></div></div></div>
+      <div className="wl-row">
+        <span className="pair-ic db-ic"><span className="coin c-btc">₿</span><span className="coin c-usd">$</span></span>
+        <div className="wl-body">
+          <div className="wl-top">
+            <span className="wl-name">{poolLabel}</span>
+            <span className="wl-val mono">{figure(position, depositValueText)}</span>
+          </div>
+          <div className="wl-sub"><span className="mono">{NONE}</span><span>token split not recorded on chain</span></div>
+        </div>
+      </div>
     </div>
-    <p className="m-foot">You get these same quantities back on withdrawal — Balcore protects by token count.</p>
+    <p className="m-foot">Impermanent loss is covered against this value before any fee is taken.</p>
   </div>
 </div>
 
@@ -146,8 +215,20 @@ export default function Overlays() {
     </div>
     <p className="m-sub">Held in your wallet — not deposited, not earning yet.</p>
     <div className="split" style={{margin: "6px 0 16px"}}>
-      <div><div className="k">In your wallet</div><div className="v mono">{balancesLoading ? <span className="is-loading">Loading…</span> : fmtUsd((Object.keys(balances) as TokenSymbol[]).reduce((s, k) => s + balances[k] * (prices[k]?.usd ?? 0), 0))}</div></div>
-      <div style={{textAlign: "right"}}><div className="k">Working in Balcore</div><div className="v mono mint">$2,418,930</div></div>
+      {/*
+        The total covers only the assets that have BOTH a balance and a live
+        feed price. An unpriced asset is skipped rather than counted at zero,
+        and `walletTotalComplete` says whether anything was skipped so the
+        figure is never presented as a full total when it isn't one.
+      */}
+      <div><div className="k">In your wallet</div><div className="v mono">{
+        balancesLoading || pricesLoading
+          ? <span className="is-loading">Loading…</span>
+          : walletTotal === null
+            ? NONE
+            : `${fmtUsd(walletTotal)}${walletTotalComplete ? "" : "*"}`
+      }</div></div>
+      <div style={{textAlign: "right"}}><div className="k">Working in Balcore</div><div className="v mono mint">{figure(position, positionValueText)}</div></div>
     </div>
     <div className="wl-list">
       {WALLET_ROWS.map((r) => (
@@ -157,14 +238,26 @@ export default function Overlays() {
             <div className="wl-top">
               <span className="wl-name">{prices[r.sym].name}</span>
               <span className="wl-val mono">
-                {balancesLoading ? <span className="is-loading">Loading…</span> : fmtUsd(balances[r.sym] * prices[r.sym].usd)}
+                {balancesLoading || pricesLoading ? (
+                  <span className="is-loading">Loading…</span>
+                ) : prices[r.sym].usd === null ? (
+                  NONE
+                ) : (
+                  fmtUsd(balances[r.sym] * (prices[r.sym].usd ?? 0))
+                )}
               </span>
             </div>
             <div className="wl-sub">
               <span className="mono">
                 {balancesLoading ? <span className="is-loading">Loading…</span> : `${fmtAmt(balances[r.sym])} ${r.unit}`}
               </span>
-              <span>{r.sym === "USDC" ? "stablecoin" : `@ ${fmtUsd(prices[r.sym].usd)}`}</span>
+              <span>
+                {r.sym === "USDC"
+                  ? "stablecoin"
+                  : prices[r.sym].usd === null
+                    ? "price unavailable"
+                    : `@ ${fmtUsd(prices[r.sym].usd ?? 0)}`}
+              </span>
             </div>
           </div>
           <button className="wl-dep" data-pool={r.pool} type="button">Deposit</button>
@@ -247,7 +340,8 @@ export default function Overlays() {
     <div className="pt-buckets">
       <div className="pt-bucket">
         <span className="pt-dot" style={{background: "var(--mint)"}}></span>
-        <div className="pt-bucket-body"><b>Working in pools</b><span id="pfPoolsSub">Earning · 28.5% / yr net</span></div>
+        {/* Was "Earning · 28.5% / yr net" — a realised-APY claim v1 cannot make. */}
+        <div className="pt-bucket-body"><b>Working in pools</b><span id="pfPoolsSub">Earning fees</span></div>
         <div className="pt-bucket-v" id="pfBucketPools">—</div>
         <button className="pt-bucket-act" data-pf="withdraw" type="button">Withdraw</button>
       </div>
@@ -275,10 +369,16 @@ export default function Overlays() {
     <div className="pt-rows" id="pfAssets"></div>
 
     <div className="pt-sec">Earnings</div>
+    {/*
+      Only the last settled epoch is readable: `lastWeekYield` comes from
+      `epochs(currentEpoch - 1).usdcYieldPerShare * shares`. All-time and
+      month-to-date are sums over every past epoch, which needs the indexed
+      history that Activity and Top Earners are also waiting on.
+    */}
     <div className="m-rows">
-      <div className="m-row"><span className="k">All time</span><span className="v mint">+$512,400</span></div>
-      <div className="m-row"><span className="k">This month</span><span className="v mint">+$52,400</span></div>
-      <div className="m-row"><span className="k">Last week</span><span className="v mint">+$13,120</span></div>
+      <div className="m-row"><span className="k">All time</span><span className="v">{NONE}</span></div>
+      <div className="m-row"><span className="k">This month</span><span className="v">{NONE}</span></div>
+      <div className="m-row"><span className="k">Last settled week</span><span className="v mint">{figure(position, lastWeekText)}</span></div>
     </div>
     <div className="m-foot">Live figures and proofs on the <a id="pfExplorer" href="/explorer" style={{color: "var(--violet)"}}>Balcore Explorer</a>.</div>
   </div>

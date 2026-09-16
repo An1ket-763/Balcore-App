@@ -39,6 +39,7 @@ import {
   BALCORE_POOLS,
   nextTuesday00Z,
   useDeposit,
+  useVaultStats,
   type BalcorePool,
   type InspectOptions,
   type PoolKey,
@@ -135,6 +136,17 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [precisionOpen, setPrecisionOpen] = useState(false);
+
+  /**
+   * The APY CAP for the selected pool — the only yield number v1 can state.
+   *
+   * This slot used to read a hardcoded "30.0%" labelled "/ YR · CAPPED", which
+   * was a realised-APY claim the chain cannot support and which contradicted
+   * the Overview screen (it shows Net APY as an em dash, capped at this same
+   * figure). `apyCapBps` is a real on-chain dial out of `feeDialsPacked`.
+   */
+  const stats = useVaultStats(poolKey);
+  const apyCapText = stats.data ? `${(stats.data.apyCapBps / 100).toFixed(2)}%` : null;
 
   /* ---- the hook ---- */
   const deposit = useDeposit(
@@ -767,9 +779,13 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
                 </div>
                 <div className="apy">
                   <div className="v" id="depPoolApy">
-                    30.0%
+                    {stats.isLoading ? (
+                      <span className="is-loading">…</span>
+                    ) : (
+                      (apyCapText ?? "—")
+                    )}
                   </div>
-                  <div className="k">/ YR · CAPPED</div>
+                  <div className="k">APY CAP</div>
                 </div>
                 <svg className="pool-caret" width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path
@@ -812,7 +828,9 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
                       <span className="pmi-body">
                         <span className="pmi-name">{p.label}</span>
                         <span className="pmi-sub">
-                          {live ? "30.0% APY · capped 30%" : "Coming soon · not open for deposits"}
+                          {/* No APY per row: the cap is read for the SELECTED pool
+                              only, and AVAX must never be queried. */}
+                          {live ? "Open for deposits" : "Coming soon · not open for deposits"}
                         </span>
                       </span>
                     </button>

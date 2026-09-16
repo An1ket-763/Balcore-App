@@ -277,11 +277,8 @@ window.__countUp = function(el){
 
     document.querySelectorAll('.nav-item[data-view]').forEach(a=> a.classList.toggle('active', a.dataset.view===name));
     window.__currentView = name;
-    // animate protocol fees the first time the Protocol view opens
-    if (name === 'protocol'){
-      const pf = document.getElementById('protoFees');
-      if (pf && window.__countUp) window.__countUp(pf);
-    }
+    // #protoFees was the "Earned by LPs since launch" count-up. It held a
+    // fabricated cumulative total; ProtocolView no longer renders it.
     window.scrollTo(0,0);
   }
 
@@ -380,17 +377,8 @@ window.__countUp = function(el){
   const ovShare = document.getElementById('ovShare');
   const shareBtn = document.getElementById('shareViewAll');
   if (shareBtn && ovShare){ shareBtn.addEventListener('click',()=> open(ovShare)); ovShare.addEventListener('click',e=>{ if(e.target===ovShare) close(ovShare); }); ovShare.querySelector('[data-close]').addEventListener('click',()=>close(ovShare)); }
-  const ovBalBreak = document.getElementById('ovBalBreak');
-  // #balBreakLink no longer exists (OverviewView.tsx removed it — #ovBalBreak is
-  // still all mock figures), so this block is inert by its own guard. It is kept
-  // whole, not deleted, because restoring the button is all it takes to re-enable
-  // the overlay once the breakdown reads real data. Escape still closes it.
-  const balBreakLink = document.getElementById('balBreakLink');
-  if (balBreakLink && ovBalBreak){
-    balBreakLink.addEventListener('click', ()=> open(ovBalBreak));
-    ovBalBreak.addEventListener('click', e=>{ if(e.target===ovBalBreak) close(ovBalBreak); });
-    ovBalBreak.querySelector('[data-close]').addEventListener('click', ()=> close(ovBalBreak));
-  }
+  // #ovBalBreak and its #balBreakLink trigger are both gone — the overlay was
+  // deleted from Overlays.tsx (see the note there). Nothing to wire.
   const ovDepBreak = document.getElementById('ovDepBreak');
   const depDetailLink = document.getElementById('depDetailLink');
   if (depDetailLink && ovDepBreak){
@@ -415,7 +403,7 @@ window.__countUp = function(el){
     ov.addEventListener('click',e=>{ if(e.target===ov) close(ov); });
     ov.querySelector('[data-close]').addEventListener('click',()=>close(ov));
   });
-  addEventListener('keydown',e=>{ if(e.key==='Escape'){close(ovD);close(ovW);close(ovP);close(ovS);close(ovB);var _s=document.getElementById('ovShare'); if(_s) close(_s);var _w=document.getElementById('ovWallet'); if(_w) close(_w);var _db=document.getElementById('ovDepBreak'); if(_db) close(_db);var _bb=document.getElementById('ovBalBreak'); if(_bb) close(_bb);} });
+  addEventListener('keydown',e=>{ if(e.key==='Escape'){close(ovD);close(ovW);close(ovP);close(ovS);close(ovB);var _s=document.getElementById('ovShare'); if(_s) close(_s);var _w=document.getElementById('ovWallet'); if(_w) close(_w);var _db=document.getElementById('ovDepBreak'); if(_db) close(_db);} });
 
   // Bridge logic now lives in modals/BridgePanel.tsx (React + wagmi).
   // The #ovBridge overlay wrapper is still opened and closed above.
@@ -886,11 +874,9 @@ window.__countUp = function(el){
   if (pfDeposited && ovDepBrk) pfDeposited.addEventListener('click', ()=>{ close(ovPf); open(ovDepBrk); });
   // "Ahead of just holding" (#edgeCard) NO LONGER opens the balance breakdown.
   // Its figure needs an entry-price history nothing indexes yet, so the card
-  // face renders a placeholder — and #ovBalBreak is still all mock numbers.
-  // Sending a user from "—" into a modal of invented figures was worse than
-  // the card doing nothing, so the binding is gone. The overlay itself stays in
-  // Overlays.tsx and is still opened by #balBreakLink. Restore this when the
-  // breakdown is real.
+  // face renders a placeholder, and #ovBalBreak — which was all invented
+  // figures — has since been deleted outright. Restore both together when the
+  // breakdown can be read.
   // last week's fees by pool: settled figures; the card opens the Activity view where each settlement is listed
   const feesCard = document.getElementById('feesByPoolCard');
   if (feesCard){
@@ -1127,7 +1113,7 @@ window.__countUp = function(el){
 
 
 
-(function(){var pf=document.getElementById("poolFees"),t=document.getElementById("poolFeesToggle");if(pf&&t)t.addEventListener("click",function(){var o=pf.classList.toggle("open");t.setAttribute("aria-expanded",o?"true":"false");});})();
+// #poolFees / #poolFeesToggle removed with the fabricated fees-by-pool list.
 
 (function(){
   var KEY="balcoreTheme", root=document.documentElement,
@@ -1148,25 +1134,9 @@ window.__countUp = function(el){
   }); });
 })();
 
-(function(){
-  var data={
-    "1w":{income:"$111,280",il:"$6,700",users:"$74,580",proto:"$9,000",reserve:"$21,000",sub:"Fees collected and where they went · last week"},
-    "1m":{income:"$466,100",il:"$28,000",users:"$312,400",proto:"$37,700",reserve:"$88,000",sub:"Fees collected and where they went · last 30 days"},
-    "6m":{income:"$2,737,000",il:"$168,000",users:"$1,838,000",proto:"$219,000",reserve:"$512,000",sub:"Fees collected and where they went · last 6 months"},
-    "1y":{income:"$5,593,000",il:"$327,000",users:"$3,580,000",proto:"$506,000",reserve:"$1,180,000",sub:"Fees collected and where they went · last 12 months"},
-    "all":{income:"$6,902,800",il:"$360,000",users:"$3,742,800",proto:"$840,000",reserve:"$1,960,000",sub:"Fees collected and where they went · since launch"}
-  };
-  var t=document.getElementById("flowToggle"); if(!t) return;
-  function set(p){var d=data[p];
-    document.getElementById("flowIncome").textContent=d.income;
-    document.getElementById("flowIL").textContent=d.il;
-    document.getElementById("flowUsers").textContent=d.users;
-    document.getElementById("flowProto").textContent=d.proto;
-    document.getElementById("flowReserve").textContent=d.reserve;
-    document.getElementById("flowSub").textContent=d.sub;
-    t.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.p===p);});
-  }
-  t.querySelectorAll("button").forEach(function(b){b.addEventListener("click",function(){set(b.dataset.p);});});
-  set("1m");
-})();
+// ---- protocol flow card ----
+// REMOVED. This block held five hardcoded period totals (1W/1M/6M/1Y/ALL) and
+// wrote them into #flowIncome/#flowIL/#flowUsers/#flowProto/#flowReserve. Those
+// are sums over time, which the contracts do not expose, so ProtocolView now
+// renders the card as a coming-soon state and the elements no longer exist.
 }

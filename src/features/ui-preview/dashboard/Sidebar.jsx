@@ -2,7 +2,7 @@ import { useAccount } from "wagmi";
 import { defaultChain } from "@/lib/wagmi";
 import { LOGO } from "./logo";
 import { useTokenBalances } from "./data/balances";
-import { getTokenPrices } from "./data/prices";
+import { useTokenPrices } from "./data/prices";
 import { shortenAddress } from "./walletUtils";
 
 
@@ -15,11 +15,13 @@ function fmtCompactUsd(n) {
 
 const CIRCUMFERENCE = 213.6;
 
+// Tesla and Gold are gone with MOCK_BALANCES — they were never held or priced.
+// This file is .jsx, so nothing would have caught `balances.TSLA` becoming
+// undefined: the donut would have silently gone NaN.
 const BUCKETS = [
   { key: "USDC", label: "Dollar", color: "#2fa96e" },
   { key: "BTC", label: "Bitcoin", color: "#f7931a" },
-  { key: "TSLA", label: "Tesla", color: "#d63031" },
-  { key: "GOLD", label: "Gold", color: "#d9b24a" },
+  { key: "AVAX", label: "Avalanche", color: "#e84142" },
 ];
 
 export default function Sidebar({ displayName = "", open = false, onClose = () => {} }) {
@@ -28,8 +30,9 @@ export default function Sidebar({ displayName = "", open = false, onClose = () =
 
   const wrongNetwork = isConnected && chain?.id !== defaultChain.id;
 
-  const { balances, isLoading } = useTokenBalances();
-  const prices = getTokenPrices();
+  const { balances, isLoading: balancesLoading } = useTokenBalances();
+  const { prices, isLoading: pricesLoading } = useTokenPrices();
+  const isLoading = balancesLoading || pricesLoading;
 
   const disabledLinkProps = wrongNetwork
     ? { "aria-disabled": true, title: `Switch to ${defaultChain.name} to use this`, style: { opacity: 0.45, pointerEvents: "none" }, onClick: (e) => e.preventDefault() }

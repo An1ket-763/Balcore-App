@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useAccount } from "wagmi";
 import { useTokenBalances } from "../data/balances";
-import { getTokenPrices } from "../data/prices";
+import { useTokenPrices } from "../data/prices";
 import { useActivity } from "../data/activity";
 import { formatUnits } from "viem";
 import { shortenAddress } from "../walletUtils";
@@ -202,11 +202,24 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
     isError: activityError,
     isConnected: activityConnected,
   } = useActivity();
-  const prices = getTokenPrices();
-  const walletTotal = (Object.keys(balances) as (keyof typeof balances)[]).reduce(
-    (sum, sym) => sum + balances[sym] * (prices[sym]?.usd ?? 0),
-    0,
-  );
+  const { prices, isLoading: pricesLoading } = useTokenPrices();
+  /**
+   * Sums only the assets with a live feed price. An unpriced asset is skipped,
+   * not counted at zero — `walletTotal` is null when nothing could be priced,
+   * so the card shows a placeholder instead of "$0".
+   */
+  const walletTotal = (() => {
+    let sum = 0;
+    let priced = 0;
+    for (const sym of Object.keys(balances) as (keyof typeof balances)[]) {
+      const usd = prices[sym]?.usd;
+      if (typeof usd === "number") {
+        sum += balances[sym] * usd;
+        priced++;
+      }
+    }
+    return priced > 0 ? sum : null;
+  })();
 
   const s = stats.data;
   const p = position.data;
@@ -322,9 +335,9 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
           <div className="card pf-value">
             {/*
               The "how it grew →" button is gone for the same reason #edgeCard
-              is inert: it opened #ovBalBreak, which is still entirely mock.
-              The overlay stays in Overlays.tsx; nothing on this screen opens it
-              any more. Put the button back when the breakdown reads real data.
+              is inert: it opened #ovBalBreak, whose figures were all invented.
+              That overlay has since been deleted. Bring both back together when
+              the breakdown can be read from an indexed history.
             */}
             <div className="card-label">Your balance</div>
             <div className="balance">{figure(position, positionValueText)}</div>
@@ -351,9 +364,9 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
           <div className="pf-side">
 
             {/*
-              Inert while the figure is unavailable. It used to open #ovBalBreak,
-              which is still entirely mock, so a card reading "—" led to a modal
-              full of invented numbers. The four things that said "clickable" are
+              Inert while the figure is unavailable. It used to open #ovBalBreak
+              (since deleted), so a card reading "—" led to a modal full of
+              invented numbers. The four things that said "clickable" are
               gone: `is-static` drops cursor:pointer, and the button role, tab
               stop and "Details →" link are removed. The listener itself lived in
               dashboardScripts.ts and was deleted there.
@@ -391,9 +404,11 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
 
             <div id="whMiniCard" hidden={true}>
               <span id="whMiniTotal">
-                {balancesLoading
+                {balancesLoading || pricesLoading
                   ? "Loading balance…"
-                  : `$${walletTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
+                  : walletTotal === null
+                    ? NONE
+                    : `$${walletTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
               </span>
               <span className="wh-mini-sub">not deposited yet</span>
             </div>
