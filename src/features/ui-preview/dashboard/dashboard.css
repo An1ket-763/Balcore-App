@@ -252,6 +252,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
    destination chain and claiming are both CTA clicks, and without this the
    attested transfer is unreachable from the UI. */
 .bridge-modal.bridging.needs-cta #brCta{display:block}
+
+/* The bar follows its button: .bridging hides #brCta, so without these the
+   action bar would remain as an empty bordered strip under the progress list.
+   The rest of the pinned-CTA block lives further down, next to .swap-modal's —
+   it has to come AFTER `.modal{overflow-y:auto}` to win on source order. */
+.bridge-modal.bridging .br-actions{display:none}
+.bridge-modal.bridging.needs-cta .br-actions{display:block}
 /* swap route selector (aggregator) */
 .route-block{margin-top:11px}
 .route-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
@@ -954,6 +961,53 @@ html[data-theme="light"] .lead-you-k{border-color:rgba(91,72,214,.45);background
 /* the success screen has no action bar, so the body is last and must
    restore the padding .swap-modal drops for the pinned CTA */
 .swap-modal .swap-body:last-child{padding-bottom:13px}
+
+/* ===== deposit modal: same treatment as .swap-modal above =====
+   Three tabs, each its own flex column, so the CTA sits in the same place no
+   matter which funding source is selected. The panels are toggled by
+   `style.display = ""` (DepositPanel.tsx:203), which CLEARS the inline value
+   rather than setting `block` — that is what lets the display:flex below win.
+   #depBody / the panels need explicit [hidden] guards: this stylesheet has no
+   global `[hidden]{display:none}`, so a display:flex here would otherwise beat
+   the `hidden` attribute and render the hidden tab. */
+.dep-modal{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+.dep-modal .m-head{flex:0 0 auto;margin-inline:-20px;padding:0 20px 9px;border-bottom:1px solid var(--line-soft)}
+.dep-modal .m-sub{flex:0 0 auto}
+.dep-modal #depChoose{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin-inline:-20px;padding:0 20px 13px}
+.dep-modal #depChoose[hidden]{display:none}
+.dep-modal #depBody{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.dep-modal #depBody[hidden]{display:none}
+.dep-modal .src-toggle{flex:0 0 auto}
+.dep-modal #depBankPanel,.dep-modal #depExchPanel,.dep-modal #depWalletPanel{
+  flex:1 1 auto;min-height:0;display:flex;flex-direction:column
+}
+.dep-modal .dep-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin-inline:-20px;padding-inline:20px}
+.dep-modal .dep-body::-webkit-scrollbar{width:8px}
+.dep-modal .dep-body::-webkit-scrollbar-track{background:transparent}
+.dep-modal .dep-body::-webkit-scrollbar-thumb{background:rgba(139,123,245,.25);border-radius:99px}
+.dep-modal .dep-body::-webkit-scrollbar-thumb:hover{background:rgba(139,123,245,.4)}
+.dep-modal .dep-actions{flex:0 0 auto;padding:12px 0 13px;margin-inline:-20px;padding-inline:20px;background:linear-gradient(180deg,transparent,var(--glass-lo2) 22%);border-top:1px solid var(--line-soft)}
+.dep-modal .dep-actions .cta{margin:0}
+.dep-modal .dep-actions .m-foot{margin-bottom:0}
+/* same fallback as swap: a body with no action bar after it restores the
+   bottom padding .dep-modal drops for the pinned CTA */
+.dep-modal .dep-body:last-child{padding-bottom:13px}
+
+/* ===== bridge modal: same treatment again =====
+   Must sit here, after `.modal{overflow-y:auto}` above: `.bridge-modal` and
+   `.modal` have equal specificity, so earlier in the file the base rule wins
+   on source order and the modal keeps a scrollbar that unpins the CTA. */
+.bridge-modal{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+.bridge-modal .m-head{flex:0 0 auto;margin-inline:-20px;padding:0 20px 9px;border-bottom:1px solid var(--line-soft)}
+.bridge-modal .br-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin-inline:-20px;padding-inline:20px}
+.bridge-modal .br-body::-webkit-scrollbar{width:8px}
+.bridge-modal .br-body::-webkit-scrollbar-track{background:transparent}
+.bridge-modal .br-body::-webkit-scrollbar-thumb{background:rgba(139,123,245,.25);border-radius:99px}
+.bridge-modal .br-body::-webkit-scrollbar-thumb:hover{background:rgba(139,123,245,.4)}
+.bridge-modal .br-actions{flex:0 0 auto;padding:12px 0 13px;margin-inline:-20px;padding-inline:20px;background:linear-gradient(180deg,transparent,var(--glass-lo2) 22%);border-top:1px solid var(--line-soft)}
+.bridge-modal .br-actions .cta{margin:0}
+.bridge-modal .br-body:last-child{padding-bottom:13px}
+
 .token-pick-wrap{position:relative;flex-shrink:0}
 .token-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:216px}
 /* coin badges for the tokens added alongside AVAX/USDC/BTC */
@@ -1248,8 +1302,11 @@ html[data-theme="light"] .lead-you-k{border-color:rgba(91,72,214,.45);background
 .wl-sub{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--text-3);margin-top:2px}
 .wl-dep{padding:6px 14px;border-radius:8px;border:1px solid rgba(139,123,245,.3);background:rgba(139,123,245,.1);color:var(--violet);font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:background .14s}
 .wl-dep:hover{background:rgba(139,123,245,.2)}
-.wh-mini{cursor:pointer;transition:transform .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease)}
-.wh-mini:hover{transform:translateY(-2px);border-color:rgba(224,178,92,.35);box-shadow:0 10px 26px -16px var(--sh-60),0 0 24px -10px rgba(224,178,92,.35)}
+.wh-mini{transition:transform .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease)}
+/* Only a card that actually opens something advertises that it does. `.is-static`
+   is for a mini whose figure is unavailable (see #edgeCard): no pointer, no lift. */
+.wh-mini:not(.is-static){cursor:pointer}
+.wh-mini:not(.is-static):hover{transform:translateY(-2px);border-color:rgba(224,178,92,.35);box-shadow:0 10px 26px -16px var(--sh-60),0 0 24px -10px rgba(224,178,92,.35)}
 .wh-mini .pf-ap-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .wh-mini-link{font-size:11px;font-weight:600;color:var(--violet)}
 .wh-mini-main{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:9px 0 2px}
@@ -1417,20 +1474,29 @@ html[data-theme="light"] .card{box-shadow:0 1px 2px rgba(23,22,48,.06),0 12px 30
   .swap-modal .swap-body{margin-inline:-16px;padding-inline:16px}
   .swap-modal .swap-actions{margin-inline:-16px;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px))}
   .swap-modal .swap-body:last-child{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
-  /* bridge takes the full screen too — same reason as swap */
-  .modal.bridge-modal{
-    height:100dvh;max-height:none;border-radius:0;
-    padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
-    overflow-y:auto;-webkit-overflow-scrolling:touch
-  }
+  /* bridge takes the full screen too — same reason as swap, and like swap the
+     safe-area inset belongs to the pinned bar, not the modal */
+  .modal.bridge-modal{height:100dvh;max-height:none;border-radius:0;padding:14px 16px 0}
   .bridge-modal .m-head{margin-inline:-16px;padding:0 16px 9px;background:transparent}
-  /* deposit + withdraw also go full-screen and keep the header transparent */
-  .modal.dep-modal,.modal.wd-modal{
+  .bridge-modal .br-body{margin-inline:-16px;padding-inline:16px}
+  .bridge-modal .br-actions{margin-inline:-16px;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px))}
+  .bridge-modal .br-body:last-child{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  /* withdraw still scrolls as one sheet — it has no pinned action bar */
+  .modal.wd-modal{
     height:100dvh;max-height:none;border-radius:0;
     padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
     overflow-y:auto;-webkit-overflow-scrolling:touch
   }
-  .dep-modal .m-head,.wd-modal .m-head{margin-inline:-16px;padding:0 16px 9px;background:var(--panel)}
+  .wd-modal .m-head{margin-inline:-16px;padding:0 16px 9px;background:var(--panel)}
+  /* deposit goes full-screen like swap, and the CTA is pinned rather than
+     living at the bottom of a scrolling sheet. The safe-area inset moves off
+     the modal and onto the action bar, which is now the bottom-most element. */
+  .modal.dep-modal{height:100dvh;max-height:none;border-radius:0;padding:14px 16px 0}
+  .dep-modal .m-head{margin-inline:-16px;padding:0 16px 9px;background:var(--panel)}
+  .dep-modal #depChoose{margin-inline:-16px;padding:0 16px calc(14px + env(safe-area-inset-bottom,0px))}
+  .dep-modal .dep-body{margin-inline:-16px;padding-inline:16px}
+  .dep-modal .dep-actions{margin-inline:-16px;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px))}
+  .dep-modal .dep-body:last-child{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 }
 
 /* ===== donut + legend stack cleanly, legend never truncates ===== */

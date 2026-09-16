@@ -13,11 +13,17 @@
  * forced a copy change, the change is to the WORDS inside the existing element,
  * never to the element.
  *
- * THE BANK AND EXCHANGE TABS ARE CARRIED OVER VERBATIM and are still driven by
- * `dashboardScripts.ts` — they are illustrative on-ramp flows with no contract
- * behind them, explicitly out of scope. They are rendered ALWAYS (toggled with
+ * THE BANK TAB IS CARRIED OVER VERBATIM and is still driven by
+ * `dashboardScripts.ts` — an illustrative on-ramp flow with no contract behind
+ * it, explicitly out of scope. It is rendered ALWAYS (toggled with
  * `style.display`, as the original did) rather than conditionally, because a
- * conditional render would unmount them and drop the script's listeners.
+ * conditional render would unmount it and drop the script's listeners.
+ *
+ * THE EXCHANGE TAB IS NOW A COMING-SOON STATE. It used to print a deposit
+ * address and a QR and invite people to send USDC to them; the address was a
+ * hardcoded literal and the per-user deposit contracts behind it do not exist,
+ * so the whole flow was replaced rather than left illustrative. See the comment
+ * on `#depExchPanel` below.
  *
  * THE TWO GLOBALS STAY: `window.__balcoreDepChooser()` and
  * `window.__balcoreDepDirect(src)` are how the sidebar, the position modal and
@@ -91,7 +97,7 @@ const SRC_SUB: Record<FundingSource, string> = {
   wallet: "Your deposit starts making markets at the next placement.",
   bank: "Pay in dollars through Coinbase. It lands as USDC in your wallet in 1–3 business days; then you choose how much goes into a pool.",
   exchange:
-    "Send USDC to your Balcore address from any exchange or wallet. It lands here as USDC, and you choose what to do with it.",
+    "Not available yet — send it to your own wallet first, then deposit from there.",
 };
 
 /**
@@ -391,13 +397,11 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
           <span className="dc-body">
             <b>On an exchange or another app</b>
             <span>
-              Coinbase, Robinhood, Kraken or any wallet. Send USDC to your Balcore address; it lands
-              here as USDC.
+              Coinbase, Robinhood, Kraken or any wallet. Withdraw the USDC to your own wallet
+              first — depositing straight from an exchange isn't live yet.
             </span>
             <span className="dc-meta">
-              <span className="dc-tag">Minutes</span>
-              <span className="dc-tag">Any network</span>
-              <span className="dc-tag">No gas needed</span>
+              <span className="dc-tag">Coming soon</span>
             </span>
           </span>
           <span className="dc-chev">
@@ -492,6 +496,7 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
 
         {/* ---------- bank on-ramp: illustrative, still script-driven ---------- */}
         <div id="depBankPanel" style={{ display: "none" }}>
+          <div className="dep-body">
           <div className="amt-box">
             <div className="amt-top">
               <span>You add</span>
@@ -578,134 +583,102 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
               wallet first. Your keys, your control.
             </span>
           </div>
-          <button className="cta" id="bankCta" disabled={true}>
-            Enter an amount
-          </button>
-          <div className="m-foot">
-            Fiat on-ramp secured by Coinbase. Final rate &amp; fees shown at checkout.
+          </div>
+          <div className="dep-actions">
+            <button className="cta" id="bankCta" disabled={true}>
+              Enter an amount
+            </button>
+            <div className="m-foot">
+              Fiat on-ramp secured by Coinbase. Final rate &amp; fees shown at checkout.
+            </div>
           </div>
         </div>
 
-        {/* ---------- exchange on-ramp: illustrative, still script-driven ---------- */}
+        {/* ----------------------------------------------------------------
+          Exchange / other-wallet on-ramp — NOT AVAILABLE IN v1.
+
+          This tab used to print a deposit address, a QR code and six network
+          chips, and tell people to send USDC to it. The address was a literal
+          in this file (it appeared exactly once in the whole repo, was never
+          read from a wallet or derived from anything, and was identical for
+          every user); the QR was a hand-drawn SVG path that nothing kept in
+          sync with it.
+
+          Making it real needs a per-user deposit address — a DepositFactory,
+          CREATE2 clones and a CCTP keeper to sweep them. None of that is
+          deployed; `grep -ri "DepositFactory\|CREATE2\|computeAddress"` over
+          src/ returns nothing. So there is no address to show, and showing one
+          anyway is how somebody loses real money.
+
+          Restore the original flow from git history once the factory ships.
+        ---------------------------------------------------------------- */}
         <div id="depExchPanel" style={{ display: "none" }}>
-          <div className="exch-from" role="tablist" aria-label="Sending from">
-            <button
-              className="on"
-              data-from="coinbase"
-              role="tab"
-              aria-selected="true"
-              type="button"
-            >
-              Coinbase
-            </button>
-            <button data-from="robinhood" role="tab" aria-selected="false" type="button">
-              Robinhood
-            </button>
-            <button data-from="exchange" role="tab" aria-selected="false" type="button">
-              Other exchange or wallet
-            </button>
-          </div>
-          <div className="recv-card">
-            <div
-              className="recv-qr"
-              role="img"
-              aria-label="QR code of your Balcore deposit address"
-            >
-              <svg viewBox="0 0 29 29" shapeRendering="crispEdges">
+          <div className="dep-body">
+            <div className="notice">
+              <svg width="14" height="14" viewBox="0 0 17 17" fill="none">
                 <path
-                  d="M0 0.5h7m3 0h3m2 0h2m2 0h1m2 0h7m-29 1h1m5 0h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m4 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h2m3 0h2m2 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h4m5 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m6 0h3m1 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m1 0h2m1 0h8m3 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h3m9 0h1m-21 1h1m1 0h5m2 0h5m1 0h1m1 0h2m1 0h1m1 0h5m-27 1h1m1 0h2m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1m2 0h1m1 0h5m1 0h2m-28 1h1m1 0h5m3 0h2m2 0h1m1 0h1m3 0h1m1 0h3m-26 1h2m2 0h2m4 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m-28 1h1m2 0h1m1 0h3m2 0h1m2 0h3m1 0h1m3 0h1m1 0h1m-23 1h3m5 0h1m6 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h2m-27 1h1m1 0h1m1 0h3m1 0h1m3 0h3m4 0h1m1 0h3m-26 1h1m3 0h1m4 0h2m1 0h1m8 0h1m2 0h1m2 0h1m-26 1h1m3 0h1m1 0h1m1 0h1m1 0h9m2 0h1m1 0h4m-29 1h1m2 0h2m2 0h1m1 0h1m9 0h1m1 0h1m2 0h2m2 0h1m-29 1h1m4 0h2m1 0h2m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m4 0h2m-27 1h1m1 0h1m5 0h1m3 0h1m11 0h1m2 0h1m-28 1h1m2 0h2m1 0h1m1 0h3m2 0h1m1 0h1m4 0h8m-20 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m3 0h2m2 0h1m-29 1h7m2 0h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h1m-28 1h1m5 0h1m1 0h1m1 0h3m1 0h1m3 0h3m3 0h2m1 0h2m-29 1h1m1 0h3m1 0h1m1 0h5m2 0h4m1 0h5m1 0h3m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h4m3 0h1m2 0h2m2 0h2m1 0h2m-29 1h1m1 0h3m1 0h1m1 0h2m3 0h4m1 0h1m3 0h3m1 0h2m-28 1h1m5 0h1m2 0h2m1 0h1m2 0h1m3 0h2m2 0h1m3 0h1m-28 1h7m1 0h1m2 0h1m3 0h1m1 0h1m6 0h3"
-                  stroke="#0b0b16"
-                  strokeWidth="1"
-                  fill="none"
+                  d="M8.5 2.2 15.3 14H1.7L8.5 2.2Z"
+                  stroke="#e0b25c"
+                  strokeWidth="1.4"
+                  strokeLinejoin="round"
+                />
+                <path d="M8.5 6.6v3.1" stroke="#e0b25c" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="8.5" cy="11.8" r=".8" fill="#e0b25c" />
+              </svg>
+              <span>
+                <b>Not available yet.</b> Depositing straight from an exchange needs a Balcore
+                address that belongs to you alone. The contracts that create one are not deployed,
+                so there is no address to give you — and we would rather show you nothing than an
+                address your money would not come back from.
+              </span>
+            </div>
+
+            <div className="onramp-flow">
+              <div className="onramp-step">
+                <span className="onramp-num">1</span>
+                <div>
+                  <b>Withdraw USDC to your own wallet</b>
+                  <span>
+                    From Coinbase, Robinhood or wherever it is now, send it to the wallet you
+                    signed in with. Avalanche C-Chain if that is offered.
+                  </span>
+                </div>
+              </div>
+              <div className="onramp-arrow">↓</div>
+              <div className="onramp-step">
+                <span className="onramp-num">2</span>
+                <div>
+                  <b>Deposit it with “From wallet”</b>
+                  <span>
+                    That tab is live and runs on the real contracts. Your USDC never passes through
+                    an address Balcore controls.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="notice green">
+              <svg width="14" height="14" viewBox="0 0 17 17" fill="none">
+                <path
+                  d="M8.5 2 14 4.3v4c0 3.2-2.2 5.6-5.5 6.7C5.2 13.9 3 11.5 3 8.3v-4L8.5 2Z"
+                  stroke="#2ee6a8"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
                 />
               </svg>
+              <span>
+                Going through your own wallet keeps the whole path non-custodial: nothing moves
+                until you sign for it, and withdrawals always return to the same wallet.
+              </span>
             </div>
-            <div className="recv-body">
-              <div className="recv-k">
-                Your Balcore deposit address · same on every network below
-              </div>
-              <div className="recv-addr" id="recvAddr">
-                0xdeA75f3B19c0E52a8D4b7C6e1F9a2b3dc4Bf9db3
-              </div>
-              <div className="recv-actions">
-                <button className="recv-copy" id="recvCopy" type="button">
-                  Copy address
-                </button>
-                <span className="recv-net">USDC only</span>
-              </div>
-              <div
-                className="recv-nets"
-                id="recvNets"
-                aria-label="Networks this address accepts USDC on"
-              >
-                <span className="recv-net-chip" data-net="avalanche">
-                  Avalanche
-                </span>
-                <span className="recv-net-chip" data-net="ethereum">
-                  Ethereum
-                </span>
-                <span className="recv-net-chip" data-net="polygon">
-                  Polygon
-                </span>
-                <span className="recv-net-chip" data-net="base">
-                  Base
-                </span>
-                <span className="recv-net-chip" data-net="arbitrum">
-                  Arbitrum
-                </span>
-                <span className="recv-net-chip" data-net="optimism">
-                  Optimism
-                </span>
-              </div>
-              <div className="recv-hint" id="exchNetHint">
-                Pick Avalanche C-Chain if it's offered. Any network listed works.
-              </div>
-            </div>
-          </div>
-          <div className="onramp-flow">
-            <div className="onramp-step">
-              <span className="onramp-num">1</span>
-              <div>
-                <b id="exchStep1">In Coinbase, send USDC to this address</b>
-                <span>
-                  Scan the code or paste the address. Balcore brings it to Avalanche for you.
-                </span>
-              </div>
-            </div>
-            <div className="onramp-arrow">↓</div>
-            <div className="onramp-step">
-              <span className="onramp-num">2</span>
-              <div>
-                <b>It lands as USDC in your Balcore account</b>
-                <span>Usually within minutes. Then you choose how much goes into a pool.</span>
-              </div>
-            </div>
-          </div>
-          <div className="notice green">
-            <svg width="14" height="14" viewBox="0 0 17 17" fill="none">
-              <path
-                d="M8.5 2 14 4.3v4c0 3.2-2.2 5.6-5.5 6.7C5.2 13.9 3 11.5 3 8.3v-4L8.5 2Z"
-                stroke="#2ee6a8"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span>
-              Your own account on Avalanche: funds only ever go into a pool you pick or back to your
-              wallet. Not earning until it's in a pool.
-            </span>
-          </div>
-          <button className="cta" id="exchCta">
-            I've sent it · watch for it
-          </button>
-          <div className="m-foot">
-            Illustrative flow. Networks and timings depend on the sending app.
           </div>
         </div>
 
         {/* ---------- the real thing: from the connected wallet ---------- */}
         <div id="depWalletPanel">
           {done ? (
+            <>
+            <div className="dep-body">
             <div className="br-done" id="depDone">
               <div className="bd-ic">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -749,6 +722,9 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
                   </span>
                 </div>
               ) : null}
+            </div>
+            </div>
+            <div className="dep-actions">
               <button
                 className="cta"
                 id="depDoneClose"
@@ -762,8 +738,10 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
                 Done
               </button>
             </div>
+            </>
           ) : (
             <>
+            <div className="dep-body">
               {/* ---- pool selector ---- */}
               <button
                 className="pool-pick pool-pick-btn"
@@ -1292,18 +1270,21 @@ export default function DepositPanel({ inspectAs }: InspectOptions = {}) {
                 </div>
               ) : null}
 
-              <button
-                className="cta"
-                id="depCta"
-                aria-live="polite"
-                disabled={ctaDisabled}
-                onClick={onCta}
-              >
-                {ctaLabel}
-              </button>
-              <div className="m-foot">
-                Deposits take both tokens, matched within 1% at the live Chainlink price. Settles
-                Tuesday 00:00 UTC.
+              </div>
+              <div className="dep-actions">
+                <button
+                  className="cta"
+                  id="depCta"
+                  aria-live="polite"
+                  disabled={ctaDisabled}
+                  onClick={onCta}
+                >
+                  {ctaLabel}
+                </button>
+                <div className="m-foot">
+                  Deposits take both tokens, matched within 1% at the live Chainlink price. Settles
+                  Tuesday 00:00 UTC.
+                </div>
               </div>
             </>
           )}

@@ -653,6 +653,7 @@ export default function BridgePanel() {
           ✕
         </button>
       </div>
+      <div className="br-body">
       <p className="br-subtitle" id="brSubtitle">
         {subtitle}
       </p>
@@ -851,10 +852,6 @@ export default function BridgePanel() {
       <div className="br-review" id="brReviewNote" hidden={phase !== "review"}>
         {reviewNote}
       </div>
-      <button className="cta" id="brCta" aria-live="polite" disabled={ctaDisabled} onClick={onCta}>
-        {ctaLabel}
-      </button>
-
       <div className="br-progress" id="brProgress" hidden={!bridging} aria-live="polite">
         <div id="brSteps">
           {shownSteps.map((step, i) => (
@@ -1026,6 +1023,19 @@ export default function BridgePanel() {
             Bridge again
           </button>
         </div>
+      </div>
+      </div>
+      {/*
+        Pinned action bar, matching .swap-modal and .dep-modal. #brCta used to
+        sit mid-document, above #brProgress; it now renders last so the bar can
+        be the modal's bottom-most element. The `.bridging` display rules in
+        dashboard.css target .br-actions as well as #brCta, so the bar hides
+        with the button instead of leaving an empty strip.
+      */}
+      <div className="br-actions">
+        <button className="cta" id="brCta" aria-live="polite" disabled={ctaDisabled} onClick={onCta}>
+          {ctaLabel}
+        </button>
       </div>
     </div>
   );

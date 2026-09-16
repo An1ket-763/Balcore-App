@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "node --experimental-strip-types --test 'src/**/*.test.ts'",
+    "pretest": "node --no-warnings -e \"if(!require('fs').globSync('src/**/*.test.ts').length)throw new Error('no test files matched src/**/*.test.ts - refusing to report a green run')\"",
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
     "format": "prettier --write ."
   },
   "dependencies": {

@@ -320,7 +320,13 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
         <div className="pf-hero">
 
           <div className="card pf-value">
-            <div className="card-label" style={{display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px"}}>Your balance <button className="bal-break-link" id="balBreakLink" type="button">how it grew →</button></div>
+            {/*
+              The "how it grew →" button is gone for the same reason #edgeCard
+              is inert: it opened #ovBalBreak, which is still entirely mock.
+              The overlay stays in Overlays.tsx; nothing on this screen opens it
+              any more. Put the button back when the breakdown reads real data.
+            */}
+            <div className="card-label">Your balance</div>
             <div className="balance">{figure(position, positionValueText)}</div>
             <div className="pf-delta" id="pfDelta">
               Performance over time needs a price history Balcore does not index yet — coming soon.
@@ -344,10 +350,21 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
 
           <div className="pf-side">
 
-            <div className="card pf-mini wh-mini accent-mint" id="edgeCard" role="button" tabIndex={0} aria-label="How your balance grew versus just holding">
+            {/*
+              Inert while the figure is unavailable. It used to open #ovBalBreak,
+              which is still entirely mock, so a card reading "—" led to a modal
+              full of invented numbers. The four things that said "clickable" are
+              gone: `is-static` drops cursor:pointer, and the button role, tab
+              stop and "Details →" link are removed. The listener itself lived in
+              dashboardScripts.ts and was deleted there.
+
+              The .pf-mini hover lift STAYS — .pf-value carries the same lift and
+              has never been clickable, so in this design it is card polish, not
+              an affordance.
+            */}
+            <div className="card pf-mini wh-mini accent-mint is-static" id="edgeCard">
               <div className="pf-ap-head">
                 <div className="card-label">Ahead of just holding</div>
-                <span className="wh-mini-link">Details →</span>
               </div>
               <div className="wh-mini-main">
                 <span className="pf-df-v mint" id="edgeVal">{NONE}</span>
@@ -469,38 +486,16 @@ export default function OverviewView({ displayName }: OverviewViewProps) {
 
         <div className="sec-title perf-head">
           <h2>Top earners this week</h2>
-          <span className="perf-note">See what the top liquidity providers are earning</span>
         </div>
+        {/*
+          A leaderboard needs every holder's weekly earnings ranked against each
+          other. That is a keeper-indexed table of the bank's user events, and it
+          does not exist yet — there is no view on BalCoreBank that enumerates
+          holders, so this cannot be read from chain state at any cost. The card
+          shell stays so the column keeps its rhythm; the rows do not.
+        */}
         <div className="lead-list">
-          <div className="lead-row lead-top">
-            <span className="lead-rank medal" role="img" aria-label="1st place">🥇</span>
-            <span className="lead-id"><span className="lead-name">Marcus</span><span className="lead-addr">0x…a3f2</span></span>
-            <span className="lead-pool"><span className="pair-ic"><span className="coin c-btc">₿</span><span className="coin c-usd">$</span></span>Bitcoin / Dollar</span>
-            <div className="col"><div className="k">Provided</div><div className="v">$3,400,000</div></div>
-            <div className="col"><div className="k">Earned · 7d</div><div className="v mint">+$19,620</div></div>
-            <div className="col lead-apy"><div className="k">APY</div><div className="v gold">30.0%</div></div>
-          </div>
-          <div className="lead-row">
-            <span className="lead-rank medal" role="img" aria-label="2nd place">🥈</span>
-            <span className="lead-id"><span className="lead-addr solo">0x…7b1e</span></span>
-            <span className="lead-pool"><span className="pair-ic"><span className="coin c-tsla">T</span><span className="coin c-usd">$</span></span>Tesla / Dollar</span>
-            <div className="col"><div className="k">Provided</div><div className="v">$3,320,000</div></div>
-            <div className="col"><div className="k">Earned · 7d</div><div className="v mint">+$16,340</div></div>
-            <div className="col lead-apy"><div className="k">APY</div><div className="v gold">25.5%</div></div>
-          </div>
-          <div className="lead-row">
-            <span className="lead-rank medal" role="img" aria-label="3rd place">🥉</span>
-            <span className="lead-id"><span className="lead-name">avalanche.eth</span><span className="lead-addr">0x…c94d</span></span>
-            <span className="lead-pool"><span className="pair-ic"><span className="coin c-gold">Au</span><span className="coin c-usd">$</span></span>Gold / Dollar</span>
-            <div className="col"><div className="k">Provided</div><div className="v">$2,720,000</div></div>
-            <div className="col"><div className="k">Earned · 7d</div><div className="v mint">+$14,880</div></div>
-            <div className="col lead-apy"><div className="k">APY</div><div className="v gold">28.4%</div></div>
-          </div>
-          <div className="lead-you">
-            <span className="lead-you-k">You</span>
-            <span className="lead-you-v">Rank #4 · +$13,120 this week — $1,760 behind #3</span>
-            <button className="lead-cta" type="button">Add liquidity →</button>
-          </div>
+          <div className="act-empty">Leaderboard data isn't indexed yet — coming soon.</div>
         </div>
 
       </div>

@@ -381,6 +381,10 @@ window.__countUp = function(el){
   const shareBtn = document.getElementById('shareViewAll');
   if (shareBtn && ovShare){ shareBtn.addEventListener('click',()=> open(ovShare)); ovShare.addEventListener('click',e=>{ if(e.target===ovShare) close(ovShare); }); ovShare.querySelector('[data-close]').addEventListener('click',()=>close(ovShare)); }
   const ovBalBreak = document.getElementById('ovBalBreak');
+  // #balBreakLink no longer exists (OverviewView.tsx removed it — #ovBalBreak is
+  // still all mock figures), so this block is inert by its own guard. It is kept
+  // whole, not deleted, because restoring the button is all it takes to re-enable
+  // the overlay once the breakdown reads real data. Escape still closes it.
   const balBreakLink = document.getElementById('balBreakLink');
   if (balBreakLink && ovBalBreak){
     balBreakLink.addEventListener('click', ()=> open(ovBalBreak));
@@ -553,46 +557,13 @@ window.__countUp = function(el){
   }
   paintBankPlacement();
 
-  // ---- deposit from an exchange / another wallet: one deposit address and per-sender network hints ----
-  const EXCH_FROM = {
-    coinbase:  { s1:'In Coinbase, send USDC to this address', hint:"Pick Avalanche C-Chain if it's offered. Any network listed works.", rec:['avalanche'], off:[] },
-    robinhood: { s1:'In Robinhood, send USDC to this address', hint:'Robinhood has no Avalanche route yet, so pick Polygon, Arbitrum, Optimism, Base or Ethereum. Balcore brings it over.', rec:['polygon','arbitrum','optimism','base','ethereum'], off:['avalanche'] },
-    exchange:  { s1:'In your exchange or wallet, send USDC to this address', hint:"Pick Avalanche C-Chain if it's offered; otherwise any network listed. Polygon, Base and Arbitrum are cheapest.", rec:['avalanche'], off:[] }
-  };
-  let exchFrom = 'coinbase';
-  const exchCta = document.getElementById('exchCta');
-  function paintExch(){
-    const f = EXCH_FROM[exchFrom]; if (!f) return;
-    const s1 = document.getElementById('exchStep1'); if (s1) s1.textContent = f.s1;
-    const hn = document.getElementById('exchNetHint'); if (hn) hn.textContent = f.hint;
-    document.querySelectorAll('#recvNets .recv-net-chip').forEach(c=>{
-      c.classList.toggle('rec', f.rec.indexOf(c.dataset.net)!==-1);
-      c.classList.toggle('off', f.off.indexOf(c.dataset.net)!==-1);
-    });
-    if (exchCta){ exchCta.disabled = false; exchCta.textContent = "I've sent it \u00b7 watch for it"; }
-  }
-  document.querySelectorAll('.exch-from button').forEach(b => b.addEventListener('click', ()=>{
-    document.querySelectorAll('.exch-from button').forEach(x=>{ x.classList.remove('on'); x.setAttribute('aria-selected','false'); });
-    b.classList.add('on'); b.setAttribute('aria-selected','true'); exchFrom = b.dataset.from; paintExch();
-  }));
-  paintExch();
-  const recvCopy = document.getElementById('recvCopy');
-  if (recvCopy) recvCopy.addEventListener('click', ()=>{
-    const el = document.getElementById('recvAddr'); if (!el) return;
-    const a = (el.textContent||'').trim();
-    const done = ()=>{ recvCopy.textContent = 'Copied \u2713'; setTimeout(()=>{ recvCopy.textContent = 'Copy address'; }, 1600); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(a).then(done, done); else done();
-  });
-  // Nothing is deposited without the user, so there is nothing to consent to here: the tracker just starts watching.
-  if (exchCta) exchCta.addEventListener('click', ()=>{
-    if (exchCta.disabled) return;
-    exchCta.disabled = true; exchCta.textContent = 'Watching\u2026';
-    setTimeout(()=>{
-      close(ovD); startIncoming({ source: exchFrom, usd: null, pool: depPoolKey });
-      toast('Watching for your USDC. We\u2019ll let you know when it lands.');
-      paintExch();
-    }, 700);
-  });
+  // ---- deposit from an exchange / another wallet ----
+  // REMOVED with the UI it drove. The exchange tab used to show a hardcoded
+  // deposit address, a QR and six network chips; #recvCopy, #exchCta, #recvNets
+  // and .exch-from no longer exist, so EXCH_FROM / paintExch() had nothing left
+  // to paint. The tab is a coming-soon state now — see DepositPanel.tsx,
+  // #depExchPanel. startIncoming() stays: the bank flow and the ?incoming=
+  // demo triggers below still use it.
 
   // ---- pending-withdrawal tracker ----
   const tracker = document.getElementById('wdTracker');
@@ -913,12 +884,13 @@ window.__countUp = function(el){
   if (pfMenuBtn) pfMenuBtn.addEventListener('click', openPortfolio);
   const pfDeposited = document.getElementById('pfDeposited'), ovDepBrk = document.getElementById('ovDepBreak');
   if (pfDeposited && ovDepBrk) pfDeposited.addEventListener('click', ()=>{ close(ovPf); open(ovDepBrk); });
-  // "Ahead of just holding" opens the balance breakdown
-  const edgeCard = document.getElementById('edgeCard'), ovBalBrk = document.getElementById('ovBalBreak');
-  if (edgeCard && ovBalBrk){
-    edgeCard.addEventListener('click', ()=> open(ovBalBrk));
-    edgeCard.addEventListener('keydown', e=>{ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(ovBalBrk); } });
-  }
+  // "Ahead of just holding" (#edgeCard) NO LONGER opens the balance breakdown.
+  // Its figure needs an entry-price history nothing indexes yet, so the card
+  // face renders a placeholder — and #ovBalBreak is still all mock numbers.
+  // Sending a user from "—" into a modal of invented figures was worse than
+  // the card doing nothing, so the binding is gone. The overlay itself stays in
+  // Overlays.tsx and is still opened by #balBreakLink. Restore this when the
+  // breakdown is real.
   // last week's fees by pool: settled figures; the card opens the Activity view where each settlement is listed
   const feesCard = document.getElementById('feesByPoolCard');
   if (feesCard){
