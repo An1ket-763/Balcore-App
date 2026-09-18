@@ -12,4 +12,15 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    // Deploy target is Netlify, not Cloudflare. The shared Lovable config only supplies
+    // `defaultPreset: "cloudflare-module"`, and Nitro consults `defaultPreset` solely when no
+    // explicit `preset` is set — so naming the preset here pins the target even if that shared
+    // config changes its default later.
+    //
+    // "netlify" (Netlify Functions, Node runtime) rather than "netlify-edge" (Deno): the planned
+    // MySQL-backed invite-code store needs a raw TCP connection, which the Deno edge runtime and
+    // Cloudflare Workers cannot open.
+    preset: "netlify",
+  },
 });
