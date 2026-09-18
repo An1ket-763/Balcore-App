@@ -14,7 +14,14 @@ import { strict as assert } from "node:assert";
 import test, { describe } from "node:test";
 import { SignJWT } from "jose";
 
-import { signSession, verifySession, SESSION_MAX_AGE_SECONDS } from "./session.ts";
+import {
+  signSession,
+  verifySession,
+  SESSION_MAX_AGE_SECONDS,
+  accessCookieOptions,
+  ACCESS_COOKIE_OPTIONS,
+  ACCESS_COOKIE_NAME,
+} from "./session.ts";
 import {
   isValidCodeFormat,
   rateLimit,
@@ -89,6 +96,46 @@ describe("session sign + verify", () => {
 
   test("signing refuses a weak secret", async () => {
     await assert.rejects(() => signSession({ codeId: "c_1", label: "Acme" }, "too-short"));
+  });
+});
+
+describe("access cookie options", () => {
+  test("production sets secure", () => {
+    assert.equal(accessCookieOptions(false).secure, true);
+  });
+
+  test("development clears secure, so http://localhost keeps the cookie", () => {
+    assert.equal(accessCookieOptions(true).secure, false);
+  });
+
+  test("secure is the ONLY attribute that varies by environment", () => {
+    const dev = accessCookieOptions(true);
+    const prod = accessCookieOptions(false);
+    assert.deepEqual({ ...dev, secure: null }, { ...prod, secure: null });
+  });
+
+  test("the non-varying attributes are the ones the gate depends on", () => {
+    for (const opts of [accessCookieOptions(true), accessCookieOptions(false)]) {
+      assert.equal(opts.httpOnly, true, "HttpOnly keeps the token away from scripts");
+      assert.equal(opts.sameSite, "lax", "Lax survives the navigation from the marketing site");
+      assert.equal(opts.path, "/", "the gate covers the whole app");
+      assert.equal(opts.maxAge, SESSION_MAX_AGE_SECONDS, "cookie and JWT must expire together");
+    }
+  });
+
+  /**
+   * `npm test` runs under plain `node --test`, where `import.meta.env` does not
+   * exist — so the resolved constant must fall back to the SECURE options. This
+   * is the fail-closed guarantee: an unrecognised runtime never gets the
+   * development cookie.
+   */
+  test("the resolved constant fails closed outside Vite", () => {
+    assert.equal(ACCESS_COOKIE_OPTIONS.secure, true);
+    assert.deepEqual(ACCESS_COOKIE_OPTIONS, accessCookieOptions(false));
+  });
+
+  test("the cookie name is the one the routes read", () => {
+    assert.equal(ACCESS_COOKIE_NAME, "balcore_access");
   });
 });
 

@@ -25,6 +25,71 @@ export interface AccessSession {
   label: string;
 }
 
+/* ------------------------------------------------------------------ */
+/* Cookie options                                                      */
+/* ------------------------------------------------------------------ */
+
+/** The attribute set used when writing `balcore_access`. */
+export interface AccessCookieOptions {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: "lax";
+  path: string;
+  maxAge: number;
+}
+
+/**
+ * THE ONE PLACE the access cookie's attributes are defined.
+ *
+ * `secure` IS DISABLED IN DEVELOPMENT ONLY, and for exactly one reason: over
+ * plain http://localhost a browser silently discards a Secure cookie, so the
+ * session is issued correctly and then thrown away, and /api/access/verify
+ * answers 401 forever. That made the code screen impossible to work on locally.
+ *
+ * ANY DEPLOYED ENVIRONMENT MUST SET IT. This cookie is the entire access gate —
+ * there is nothing else between a visitor and the app. Served without `Secure`
+ * over a network, it rides in cleartext on any plain-http request to the domain
+ * and anyone who can watch the wire can replay it for the full 30 days. Do not
+ * relax the condition below to "staging too" or to a flag someone can flip by
+ * mistake; the only environment that may omit it is the one where the cookie
+ * cannot leave the machine.
+ *
+ * Every other attribute is constant across environments: HttpOnly keeps it away
+ * from scripts, SameSite=Lax blunts CSRF while surviving the top-level
+ * navigation from the marketing site, Path=/ covers the whole app, and Max-Age
+ * tracks the JWT's own expiry so the cookie and the token die together.
+ */
+export function accessCookieOptions(isDev: boolean): AccessCookieOptions {
+  return {
+    httpOnly: true,
+    secure: !isDev,
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  };
+}
+
+/**
+ * Vite's own build-time flag — the standard signal, not a custom env var.
+ *
+ * Read defensively because this module has two very different runtimes. Under
+ * Vite (dev server and the nitro build) `import.meta.env.DEV` is replaced with a
+ * literal. Under plain `node --test`, which is how `npm test` runs, there is no
+ * `import.meta.env` at all and a bare access would throw on import.
+ *
+ * The fallback direction is deliberate: anything that is not provably
+ * development is treated as production, so an unrecognised runtime gets the
+ * SECURE cookie rather than the insecure one. A security flag should fail
+ * closed.
+ */
+const IS_DEV: boolean =
+  typeof import.meta !== "undefined" &&
+  typeof import.meta.env !== "undefined" &&
+  import.meta.env.DEV === true;
+
+/** The options every route uses. Resolved once, from `IS_DEV`. */
+export const ACCESS_COOKIE_OPTIONS: AccessCookieOptions = accessCookieOptions(IS_DEV);
+
 /**
  * The signing key.
  *

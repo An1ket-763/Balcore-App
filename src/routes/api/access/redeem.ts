@@ -14,7 +14,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getRequestIP, setCookie } from "@tanstack/react-start/server";
 import { codeStore } from "@/server/access/codeStore";
-import { ACCESS_COOKIE_NAME, SESSION_MAX_AGE_SECONDS, signSession } from "@/server/access/session";
+import { ACCESS_COOKIE_NAME, ACCESS_COOKIE_OPTIONS, signSession } from "@/server/access/session";
 import { isValidCodeFormat, rateLimit } from "@/server/access/guard";
 
 /**
@@ -83,13 +83,7 @@ export const Route = createFileRoute("/api/access/redeem")({
           return json({ ok: false, error: "Access is misconfigured. Contact the team." }, 500);
         }
 
-        setCookie(ACCESS_COOKIE_NAME, token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "lax",
-          path: "/",
-          maxAge: SESSION_MAX_AGE_SECONDS,
-        });
+        setCookie(ACCESS_COOKIE_NAME, token, ACCESS_COOKIE_OPTIONS);
 
         // Audit trail must never turn a successful redemption into a failure.
         try {
