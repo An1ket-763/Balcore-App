@@ -2,7 +2,16 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * Dark is the product default.
+ *
+ * The hand-written dashboard/explorer stylesheets already treat an <html> with
+ * no `data-theme` as dark, going light only on `data-theme="light"` -- the
+ * attribute the dashboard theme toggle writes. These tokens follow that same
+ * signal, so a screen built on them matches the rest of the product instead of
+ * falling back to the light palette. `.dark` stays as an explicit opt-in.
+ */
+@custom-variant dark (&:is(:root:not([data-theme="light"]) *, .dark *));
 
 /*
  * Design system definition.
@@ -62,6 +71,7 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
@@ -97,7 +107,9 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
+:root:not([data-theme="light"]),
 .dark {
+  color-scheme: dark;
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755);
