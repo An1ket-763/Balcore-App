@@ -3,12 +3,15 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  redirect,
   useRouter,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { ACCESS_ROUTE, NEXT_PARAM, decideAccess } from "@/lib/accessGate";
+import { verifyAccess } from "@/lib/accessGate.server";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -69,6 +72,33 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  /**
+   * THE ACCESS GATE.
+   *
+   * Runs on the root route, so it covers every path in the app including ones
+   * added later — a per-route guard would have to be remembered each time.
+   *
+   * On the server this executes during SSR, before any child route renders, so
+   * an unauthenticated visitor is redirected without ever receiving app markup.
+   * On the client it runs again for each navigation, where `verifyAccess`
+   * becomes an RPC call rather than a local check — the cookie is HttpOnly, so
+   * the browser cannot inspect it and the answer has to come from the server
+   * either way.
+   *
+   * This sits IN FRONT OF Privy and knows nothing about it. Past the gate, the
+   * wallet sign-in behaves exactly as it did before.
+   */
+  beforeLoad: async ({ location }) => {
+    const decision = await decideAccess(location.pathname, location.href, () => verifyAccess());
+    if (decision.allow) return;
+    throw redirect({
+      to: ACCESS_ROUTE,
+      search: { [NEXT_PARAM]: decision.next },
+      // A gate bounce is not a page the user chose; it should not sit in
+      // history where Back would land them on it after they are let in.
+      replace: true,
+    });
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },

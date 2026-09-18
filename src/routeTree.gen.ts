@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccessRouteImport } from './routes/access'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as DevBalcoreRouteImport } from './routes/dev/balcore'
 import { Route as ApiAccessRedeemRouteImport } from './routes/api/access/redeem'
@@ -18,6 +19,11 @@ import { Route as ApiAccessVerifyRouteImport } from './routes/api/access/verify'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccessRoute = AccessRouteImport.update({
+  id: '/access',
+  path: '/access',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExplorerRoute = ExplorerRouteImport.update({
@@ -43,6 +49,7 @@ const ApiAccessVerifyRoute = ApiAccessVerifyRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/access': typeof AccessRoute
   '/explorer': typeof ExplorerRoute
   '/dev/balcore': typeof DevBalcoreRoute
   '/api/access/redeem': typeof ApiAccessRedeemRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/access': typeof AccessRoute
   '/explorer': typeof ExplorerRoute
   '/dev/balcore': typeof DevBalcoreRoute
   '/api/access/redeem': typeof ApiAccessRedeemRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/access': typeof AccessRoute
   '/explorer': typeof ExplorerRoute
   '/dev/balcore': typeof DevBalcoreRoute
   '/api/access/redeem': typeof ApiAccessRedeemRoute
@@ -67,6 +76,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/access'
     | '/explorer'
     | '/dev/balcore'
     | '/api/access/redeem'
@@ -74,6 +84,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/access'
     | '/explorer'
     | '/dev/balcore'
     | '/api/access/redeem'
@@ -81,6 +92,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/access'
     | '/explorer'
     | '/dev/balcore'
     | '/api/access/redeem'
@@ -89,6 +101,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccessRoute: typeof AccessRoute
   ExplorerRoute: typeof ExplorerRoute
   DevBalcoreRoute: typeof DevBalcoreRoute
   ApiAccessRedeemRoute: typeof ApiAccessRedeemRoute
@@ -102,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/access': {
+      id: '/access'
+      path: '/access'
+      fullPath: '/access'
+      preLoaderRoute: typeof AccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explorer': {
@@ -137,6 +157,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccessRoute: AccessRoute,
   ExplorerRoute: ExplorerRoute,
   DevBalcoreRoute: DevBalcoreRoute,
   ApiAccessRedeemRoute: ApiAccessRedeemRoute,
